@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f7f8fa" />
+    <meta name="description" content="One post. Every platform. Meet ALL-POST, your simpler social publishing desk." />
+    <title>ALL-POST — One post. Everywhere.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="#home" aria-label="ALL-POST home"><span class="brand-mark">a<span>.</span></span><span>all-post</span></a>
+        <div class="workspace"><div class="workspace-avatar">A</div><div><strong>My workspace</strong><small>Free plan</small></div><span class="chevron">⌄</span></div>
+        <div class="nav-label">WORKSPACE</div>
+        <nav class="main-nav" aria-label="Main navigation">
+          <a class="nav-item active" href="#compose"><span class="nav-icon">✳</span> Compose <span class="nav-shortcut">⌘ N</span></a>
+          <a class="nav-item" href="#queue"><span class="nav-icon">◷</span> Queue <span class="nav-count" id="queue-count">3</span></a>
+          <a class="nav-item" href="#calendar"><span class="nav-icon">▦</span> Calendar</a>
+          <a class="nav-item" href="#analytics"><span class="nav-icon">⌁</span> Analytics</a>
+        </nav>
+        <div class="nav-label accounts-label">YOUR CHANNELS <button class="tiny-plus" aria-label="Add a channel">+</button></div>
+        <div class="account-item"><span class="social-dot instagram">◎</span> Instagram <span class="account-state">setup</span></div>
+        <div class="account-item"><span class="social-dot linkedin">in</span> LinkedIn <span class="account-state">setup</span></div>
+        <div class="account-item"><span class="social-dot x-social">𝕏</span> X <span class="account-state">setup</span></div>
+        <div class="account-item"><span class="social-dot youtube">▶</span> YouTube <span class="account-state">setup</span></div>
+        <div class="account-item"><span class="social-dot tiktok">♪</span> TikTok <span class="account-state">setup</span></div>
+        <div class="sidebar-bottom"><div class="upgrade-card"><span class="sparkle">✦</span><strong>Make more happen</strong><p>Unlock unlimited channels and scheduling.</p><button>Explore plans <span>↗</span></button></div><div class="profile"><div class="profile-avatar">AG</div><div><strong>Alex Getahun</strong><small>Account settings</small></div><span class="more">···</span></div></div>
+      </aside>
+
+      <main class="main-content" id="home">
+        <header class="topbar"><div class="breadcrumbs">Workspace <span>/</span> <strong>Compose</strong></div><div class="topbar-right"><span class="today-label">Wednesday, November 5</span><button class="help-button" aria-label="Help">?</button><div class="top-avatar">AG</div></div></header>
+        <div class="page-wrap" id="compose">
+          <div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> YOUR SOCIAL DESK</div><h1>Make one post.<br /><span>Show up everywhere.</span></h1><p class="heading-copy">A little less tab hopping. A lot more being out there.</p></div><div class="heading-decoration"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="orbit-core">a<span>.</span></div><span class="orbit-star star-one">✳</span><span class="orbit-star star-two">✦</span></div></div>
+          <div class="composer-layout">
+            <section class="compose-column">
+              <div class="section-title"><div class="step-number">01</div><div><h2>Your post</h2><p>Start with one idea. Make it yours.</p></div><button class="save-draft" id="save-draft">↗ <span>Save draft</span></button></div>
+              <div class="composer-card">
+                <div class="composer-toolbar"><span class="toolbar-label">WRITE SOMETHING GOOD</span><span class="draft-state" id="draft-state">Saved on this device</span></div>
+                <textarea id="post-text" maxlength="500" placeholder="What’s on your mind? Share a thought, a win, or something worth passing on…"></textarea>
+                <div class="composer-tools"><div class="tool-group"><button class="icon-tool" id="image-button" aria-label="Add image" title="Image">▧</button><input id="image-input" type="file" accept="image/*" hidden /><button class="icon-tool" id="link-button" aria-label="Add link" title="Link">⌁</button><button class="icon-tool" id="emoji-button" aria-label="Add emoji" title="Emoji">☺</button><span class="tool-divider"></span><button class="hashtag-tool"># Add a tag</button><div class="emoji-picker" id="emoji-picker" hidden><button type="button">✨</button><button type="button">🎉</button><button type="button">💡</button><button type="button">🙌</button><button type="button">❤️</button><button type="button">🌱</button></div></div><span class="char-count"><b id="char-count">0</b> / 500</span></div>
+              </div>
+              <div class="section-title channels-heading"><div class="step-number">02</div><div><h2>Pick your places</h2><p>Choose where this post should go.</p></div><button class="select-all" id="select-all">Select all</button></div>
+              <div class="channel-list" id="channel-list">
+                <label class="channel-row selected" data-channel="instagram"><input type="checkbox" checked /><span class="channel-logo instagram">◎</span><span class="channel-info"><strong>Instagram</strong><small>Photo, reel &amp; caption</small></span><span class="channel-status">Not connected</span><span class="toggle"><i></i></span></label>
+                <label class="channel-row selected" data-channel="linkedin"><input type="checkbox" checked /><span class="channel-logo linkedin">in</span><span class="channel-info"><strong>LinkedIn</strong><small>Personal &amp; company posts</small></span><span class="channel-status">Not connected</span><span class="toggle"><i></i></span></label>
+                <label class="channel-row selected" data-channel="x"><input type="checkbox" checked /><span class="channel-logo x-social">𝕏</span><span class="channel-info"><strong>X</strong><small>Post &amp; thread</small></span><span class="channel-status">Not connected</span><span class="toggle"><i></i></span></label>
+                <label class="channel-row selected" data-channel="youtube"><input type="checkbox" checked /><span class="channel-logo youtube">▶</span><span class="channel-info"><strong>YouTube</strong><small>Video &amp; community post</small></span><span class="channel-status">Not connected</span><span class="toggle"><i></i></span></label>
+                <label class="channel-row selected" data-channel="tiktok"><input type="checkbox" checked /><span class="channel-logo tiktok">♪</span><span class="channel-info"><strong>TikTok</strong><small>Video &amp; caption</small></span><span class="channel-status">Not connected</span><span class="toggle"><i></i></span></label>
+              </div>
+              <div class="action-row"><button class="schedule-button" id="schedule-button"><span>◷</span> Schedule</button><button class="publish-button" id="publish-button">Post to <b id="selected-count">5</b> channels <span>↗</span></button></div>
+              <p class="fine-print"><span>✦</span> One post, ready for the platforms you choose.</p>
+            </section>
+            <aside class="preview-column"><div class="preview-topline"><div><div class="step-label">LIVE PREVIEW</div><h2>See how it lands.</h2></div><button class="preview-options" aria-label="Preview options">···</button></div><div class="preview-tabs"><button class="preview-tab active" data-preview="instagram">◎</button><button class="preview-tab" data-preview="linkedin">in</button><button class="preview-tab" data-preview="x">𝕏</button><button class="preview-tab" data-preview="youtube">▶</button><button class="preview-tab" data-preview="tiktok">♪</button><span class="tab-spacer"></span><span class="preview-live"><i></i> PREVIEW</span></div><div class="post-preview" id="post-preview"><div class="preview-user"><div class="preview-avatar">AG</div><div><strong>alexgetahun</strong><small id="preview-subtitle">Suggested for you</small></div><span class="preview-more">···</span></div><div class="preview-image" id="preview-image"><div class="image-sun"></div><div class="image-label">YOUR NEXT<br />GOOD IDEA <span>↗</span></div><div class="image-caption">Make it<br /><em>happen.</em></div><div class="image-tag">ALL-POST</div><div class="image-checker"></div></div><div class="preview-engagement"><span class="engagement-icons">♡ &nbsp;◯ &nbsp;⌁</span><span>⌑</span></div><div class="preview-copy"><strong>alexgetahun</strong> <span id="preview-copy">Your next idea deserves to be seen.</span><div class="preview-hashtags">#create #showup #allpost</div><small>Just now</small></div></div><div class="preview-tip"><span class="tip-icon">✦</span><span><strong>One thought, many timelines.</strong><br />Your preview updates as you write.</span></div><div class="queue-peek" id="queue"><div class="queue-peek-head"><div><span class="step-label">UP NEXT</span><h3>A little momentum</h3></div><a href="#queue">View queue <span>→</span></a></div><div class="queue-post"><div class="queue-date"><b>06</b><small>NOV</small></div><div class="queue-post-info"><strong>Good things are in motion.</strong><small>Tomorrow · 10:30 AM</small></div><div class="queue-dots"><i class="instagram">◎</i><i class="linkedin">in</i></div></div></div></aside>
+          </div>
+          <footer class="page-footer"><span>Small steps. Better reach.</span><span>MADE FOR THE WAY YOU POST <b>✳</b></span></footer>
+        </div>
+      </main>
+    </div>
+    <div class="toast" id="toast" role="status"></div>
+    <div class="modal-backdrop" id="modal"><div class="modal-card"><button class="modal-close" id="modal-close">×</button><div class="modal-symbol">✦</div><span class="step-label">A LITTLE MORE TO GO</span><h2 id="modal-title">Your post is ready.</h2><p id="modal-body">Connect your social accounts to publish your first post from ALL-POST.</p><button class="modal-action" id="modal-action">Got it <span>→</span></button></div></div>
+    <script src="app.js"></script>
+  </body>
+</html>
