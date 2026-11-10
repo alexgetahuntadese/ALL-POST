@@ -1,19 +1,33 @@
 # ALL-POST
 
-ALL-POST is a social publishing app concept for composing one post and choosing where it should appear. This repository currently contains the responsive front-end prototype.
+ALL-POST is a single-owner social publishing workspace with protected Vercel API routes, signed sessions, OAuth state checks, and encrypted provider-token storage in private Vercel Blob.
 
 ## Run locally
 
-From this folder, run `python -m http.server 4173 --bind 127.0.0.1` and open <http://127.0.0.1:4173>.
+Requires Node.js 20 or newer. Copy `.env.example` to `.env`, then run:
 
-## Current scope
+```powershell
+npm start
+```
 
-- Responsive compose screen with Instagram, LinkedIn, X, YouTube, and TikTok channel selectors.
-- Draft text and channel selections saved in this browser using local storage.
-- Local image preview, emoji insertion, link insertion, hashtag insertion, and a keyboard shortcut (`Ctrl/Cmd + N`).
-- Platform preview tabs are visual prototypes. Social account connection, uploading media to social platforms, scheduling, and publishing are not implemented yet.
-- The queue is sample content.
+Open <http://127.0.0.1:4173>.
 
-## Launch requirements
+## Provider setup
 
-Before production use, add a backend and database, implement secure OAuth/API connections for each selected platform, and replace the prototype queue and publish actions with persisted jobs. Platform API access and content formats vary by network.
+Production credentials and callback requirements are documented in [API_SETUP.md](API_SETUP.md). Keep provider secrets in Vercel’s server-side environment settings, not in frontend code or Git.
+
+## Vercel deployment
+
+Production URL: <https://all-post.vercel.app>. Vercel provides HTTPS without a custom domain. The app is protected by its workspace password and private Blob-backed OAuth storage. The public media store must be connected with the `MEDIA` environment prefix to enable uploads.
+
+## Current API coverage
+
+- LinkedIn and X: protected OAuth connections and text posts.
+- Instagram: protected OAuth connection and photo/Reel publishing.
+- TikTok: protected OAuth connection and photo/video publishing, with creator privacy/interactions, consent, status polling, and a verified custom media domain requirement.
+- YouTube: protected OAuth connection and video uploads with title and privacy settings.
+- Scheduling, workspaces, queue persistence, and multi-user sign-in are not implemented.
+
+See [API_SETUP.md](API_SETUP.md) for the platform-by-platform access, credential, and approval checklist.
+
+The original browser-only preview can still be opened as a static page, but API actions require the Node server.

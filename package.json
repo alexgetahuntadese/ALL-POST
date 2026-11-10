@@ -1,0 +1,22 @@
+{
+  "name": "all-post",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.js",
+    "start": "node --env-file-if-exists=.env server.js"
+  },
+  "engines": {
+    "node": ">=20.12"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.9.0"
+  },
+  "overrides": {
+    "@vercel/cli-config": "0.3.8"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}

@@ -6,3 +6,8 @@ node_modules
 dist
 .DS_Store
 Thumbs.db
+.env
+.data/
+node_modules/
+.env*
+!.env.example
