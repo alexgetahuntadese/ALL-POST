@@ -26,7 +26,7 @@ If you switch the app to your custom domain, update `APP_BASE_URL` and each corr
 
 ## Vercel media storage
 
-The public media store `all-post-public-media` has been created. In Vercel, open its Storage page, connect it to project `all-post` for Production and Preview, and use the custom environment prefix `MEDIA`. This must create `MEDIA_BLOB_READ_WRITE_TOKEN` while leaving the existing private store’s `BLOB_READ_WRITE_TOKEN` unchanged. Redeploy after connecting it.
+The public media store `all-post-public-media` is connected to project `all-post` for Production with the custom environment prefix `MEDIA`. Vercel provides `MEDIA_READ_WRITE_TOKEN`; the existing private store’s `BLOB_READ_WRITE_TOKEN` remains separate. Redeploy after any storage connection changes.
 
 The existing private store remains the store for encrypted OAuth tokens. Don’t replace or delete its token. Media is served through `/api/media/public` so a custom app domain can be used as the public media hostname.
 

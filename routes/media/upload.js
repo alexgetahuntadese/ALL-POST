@@ -6,7 +6,7 @@ const mediaTypes = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video
 export default async function handler(request, response) {
   if (request.method !== 'POST') return response.status(405).end();
   if (!requireSameOrigin(request, response) || !requireSession(request, response)) return;
-  const token = process.env.MEDIA_BLOB_READ_WRITE_TOKEN;
+  const token = process.env.MEDIA_READ_WRITE_TOKEN;
   if (!token) return response.status(503).json({ error: 'Public media storage is not configured yet.' });
   try {
     const result = await handleUpload({

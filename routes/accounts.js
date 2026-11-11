@@ -28,14 +28,14 @@ export default async function handler(request, response) {
       xPublishingEnabled: xReady && Boolean(xAccount),
       instagramConfigured: instagramReady,
       instagram: instagramAccount ? { connected: true, name: instagramAccount.name, username: instagramAccount.username } : { connected: false },
-      instagramPublishingEnabled: Boolean(process.env.MEDIA_BLOB_READ_WRITE_TOKEN) && instagramReady && Boolean(instagramAccount),
+      instagramPublishingEnabled: Boolean(process.env.MEDIA_READ_WRITE_TOKEN) && instagramReady && Boolean(instagramAccount),
       tiktokConfigured: tiktokReady,
       tiktok: tiktokAccount ? { connected: true, name: tiktokAccount.name, username: tiktokAccount.username } : { connected: false },
-      tiktokPublishingEnabled: Boolean(process.env.MEDIA_BLOB_READ_WRITE_TOKEN && process.env.TIKTOK_VERIFIED_DOMAIN) && tiktokReady && Boolean(tiktokAccount),
+      tiktokPublishingEnabled: Boolean(process.env.MEDIA_READ_WRITE_TOKEN && process.env.TIKTOK_VERIFIED_DOMAIN) && tiktokReady && Boolean(tiktokAccount),
       youtubeConfigured: youtubeReady,
       youtube: youtubeAccount ? { connected: true, name: youtubeAccount.name, picture: youtubeAccount.picture } : { connected: false },
-      youtubePublishingEnabled: Boolean(process.env.MEDIA_BLOB_READ_WRITE_TOKEN) && youtubeReady && Boolean(youtubeAccount),
-      publicMediaConfigured: Boolean(process.env.MEDIA_BLOB_READ_WRITE_TOKEN),
+      youtubePublishingEnabled: Boolean(process.env.MEDIA_READ_WRITE_TOKEN) && youtubeReady && Boolean(youtubeAccount),
+      publicMediaConfigured: Boolean(process.env.MEDIA_READ_WRITE_TOKEN),
     });
   } catch (error) {
     console.error('LinkedIn account lookup failed:', error.message);
