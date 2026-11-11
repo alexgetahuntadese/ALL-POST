@@ -1,5 +1,6 @@
 import accounts from '../routes/accounts.js';
 import accountInstagramDisconnect from '../routes/accounts/instagram/disconnect.js';
+import accountFacebookDisconnect from '../routes/accounts/facebook/disconnect.js';
 import accountLinkedInDisconnect from '../routes/accounts/linkedin/disconnect.js';
 import accountTikTokCreatorInfo from '../routes/accounts/tiktok/creator-info.js';
 import accountTikTokDisconnect from '../routes/accounts/tiktok/disconnect.js';
@@ -14,6 +15,8 @@ import mediaPublic from '../routes/media/public.js';
 import mediaUpload from '../routes/media/upload.js';
 import oauthInstagramCallback from '../routes/oauth/instagram/callback.js';
 import oauthInstagramStart from '../routes/oauth/instagram/start.js';
+import oauthFacebookCallback from '../routes/oauth/facebook/callback.js';
+import oauthFacebookStart from '../routes/oauth/facebook/start.js';
 import oauthLinkedInCallback from '../routes/oauth/linkedin/callback.js';
 import oauthLinkedInStart from '../routes/oauth/linkedin/start.js';
 import oauthTikTokCallback from '../routes/oauth/tiktok/callback.js';
@@ -23,6 +26,7 @@ import oauthXStart from '../routes/oauth/x/start.js';
 import oauthYouTubeCallback from '../routes/oauth/youtube/callback.js';
 import oauthYouTubeStart from '../routes/oauth/youtube/start.js';
 import publishInstagram from '../routes/publish/instagram.js';
+import publishFacebook from '../routes/publish/facebook.js';
 import publishLinkedIn from '../routes/publish/linkedin.js';
 import publishTikTok from '../routes/publish/tiktok.js';
 import publishTikTokStatus from '../routes/publish/tiktok/status.js';
@@ -32,6 +36,7 @@ import publishYouTube from '../routes/publish/youtube.js';
 const handlers = new Map([
   ['accounts', accounts],
   ['accounts/instagram/disconnect', accountInstagramDisconnect],
+  ['accounts/facebook/disconnect', accountFacebookDisconnect],
   ['accounts/linkedin/disconnect', accountLinkedInDisconnect],
   ['accounts/tiktok/creator-info', accountTikTokCreatorInfo],
   ['accounts/tiktok/disconnect', accountTikTokDisconnect],
@@ -46,6 +51,8 @@ const handlers = new Map([
   ['media/upload', mediaUpload],
   ['oauth/instagram/callback', oauthInstagramCallback],
   ['oauth/instagram/start', oauthInstagramStart],
+  ['oauth/facebook/callback', oauthFacebookCallback],
+  ['oauth/facebook/start', oauthFacebookStart],
   ['oauth/linkedin/callback', oauthLinkedInCallback],
   ['oauth/linkedin/start', oauthLinkedInStart],
   ['oauth/tiktok/callback', oauthTikTokCallback],
@@ -55,6 +62,7 @@ const handlers = new Map([
   ['oauth/youtube/callback', oauthYouTubeCallback],
   ['oauth/youtube/start', oauthYouTubeStart],
   ['publish/instagram', publishInstagram],
+  ['publish/facebook', publishFacebook],
   ['publish/linkedin', publishLinkedIn],
   ['publish/tiktok', publishTikTok],
   ['publish/tiktok/status', publishTikTokStatus],

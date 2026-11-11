@@ -1,6 +1,6 @@
 # ALL-POST production setup
 
-ALL-POST has server-side OAuth and publishing flows for LinkedIn and X text posts, Instagram photo/Reel posts, TikTok photo/video posts, and YouTube video uploads. Each provider still needs its own developer app, credentials, account consent, and sometimes platform review. Do not paste secrets into chat or commit them.
+ALL-POST has server-side OAuth and publishing flows for LinkedIn, X, and Facebook Page text posts, Facebook JPEG photo posts, Instagram photo/Reel posts, TikTok photo/video posts, and YouTube video uploads. Each provider still needs its own developer app, credentials, account consent, and sometimes platform review. Do not paste secrets into chat or commit them.
 
 ## Current production foundation
 
@@ -19,6 +19,7 @@ Register the exact callback URL in each provider’s developer portal:
 | LinkedIn | `https://all-post.vercel.app/api/oauth/linkedin/callback` |
 | X | `https://all-post.vercel.app/api/oauth/x/callback` |
 | Instagram | `https://all-post.vercel.app/api/oauth/instagram/callback` |
+| Facebook | `https://all-post.vercel.app/api/oauth/facebook/callback` |
 | TikTok | `https://all-post.vercel.app/api/oauth/tiktok/callback` |
 | YouTube / Google | `https://all-post.vercel.app/api/oauth/youtube/callback` |
 
@@ -43,6 +44,12 @@ Text posting uses OAuth 2.0 Authorization Code with PKCE. Add `X_CLIENT_ID`, `X_
 Add `META_APP_ID`, `META_APP_SECRET`, and `INSTAGRAM_REDIRECT_URI=https://all-post.vercel.app/api/oauth/instagram/callback` as Production secrets. The integration uses Instagram Login and needs a Professional (Business or Creator) Instagram account with the Instagram API with Instagram Login product and `instagram_business_basic` plus `instagram_business_content_publish` permissions. Meta may require app review and an app mode change before non-role accounts can authorize or publish.
 
 Supported media: JPEG photo posts and MP4/MOV Reels. The caption uses the composer text.
+
+## Facebook Pages
+
+Use the Meta app ID and secret already configured for Instagram, then add `FACEBOOK_REDIRECT_URI=https://all-post.vercel.app/api/oauth/facebook/callback` and `FACEBOOK_API_VERSION=v26.0` in Vercel Production. Enable Facebook Login and register that exact callback URL. ALL-POST requests `pages_show_list`, `pages_read_engagement`, and `pages_manage_posts`; the signed-in profile must have content creation access to at least one Facebook Page. Personal profile publishing is not supported. Meta app review / Advanced Access may be required before other people or production users can connect Pages.
+
+After connecting, choose the Page in the composer. Text posts and single JPEG photo posts are supported; videos and multi-photo posts are not enabled yet. The Page access tokens are encrypted in private Blob storage.
 
 ## TikTok
 

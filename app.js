@@ -19,6 +19,7 @@ let selectedMedia = null;
 let mediaStorageConfigured = false;
 
 const platformCopy = {
+  facebook: ['Page post', 'Facebook Page'],
   instagram: ['Suggested for you', 'alexgetahun'],
   linkedin: ['Your network', 'Alex Getahun'],
   x: ['Latest posts', 'alexgetahun'],
@@ -54,7 +55,8 @@ function updateSelected() {
 
 function updateMediaOptions() {
   const selected = selectedRows().map((row) => row.dataset.channel);
-  document.getElementById('media-options').hidden = !selected.some((channel) => ['instagram', 'tiktok', 'youtube'].includes(channel)) && !selectedMedia;
+  document.getElementById('media-options').hidden = !selected.some((channel) => ['facebook', 'instagram', 'tiktok', 'youtube'].includes(channel)) && !selectedMedia;
+  document.getElementById('facebook-options').hidden = !selected.includes('facebook');
   document.getElementById('media-storage-note').hidden = mediaStorageConfigured || selectedMedia !== null;
   document.getElementById('tiktok-privacy-group').hidden = !selected.includes('tiktok');
   document.getElementById('youtube-options').hidden = !selected.includes('youtube');
@@ -99,6 +101,7 @@ rows.forEach((row) => {
             linkedin: 'Add LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET in Vercel, then enable Share on LinkedIn and OpenID Connect.',
             x: 'Add X_CLIENT_ID and X_CLIENT_SECRET in Vercel, enable OAuth 2.0 Web App access, and allow tweet.write plus offline.access.',
             instagram: 'Add META_APP_ID and META_APP_SECRET in Vercel. Instagram publishing requires a Professional account and approved Instagram Login permissions.',
+            facebook: 'Add META_APP_ID and META_APP_SECRET in Vercel and enable Facebook Login. The app needs pages_show_list, pages_read_engagement, and pages_manage_posts to publish to a Page.',
             tiktok: 'Add the TikTok app credentials and callback in Vercel. Direct Post needs video.publish approval, a domain you own verified in TikTok, and an app audit for public posting.',
             youtube: 'Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Vercel, enable YouTube Data API v3, and request youtube.upload.',
           };
@@ -171,7 +174,15 @@ document.getElementById('publish-button').addEventListener('click', async () => 
   if (!textarea.value.trim()) return openModal('Start with a thought.', 'Write a few words and your preview will come to life.');
   const selected = selectedRows().map((row) => row.dataset.channel);
   if (selected.some((channel) => ['instagram', 'tiktok', 'youtube'].includes(channel)) && !selectedMedia) {
-    openModal('Add photo or video.', 'Instagram, TikTok, and YouTube need an uploaded media file.');
+    openModal('Add photo or video.', 'Instagram, TikTok, and YouTube need an uploaded media file. Facebook and X can publish text only.');
+    return;
+  }
+  if (selected.includes('facebook') && selectedMedia && selectedMedia.contentType !== 'image/jpeg') {
+    openModal('Choose a JPEG for Facebook.', 'Facebook currently supports text posts or a single JPEG photo.');
+    return;
+  }
+  if (selected.includes('facebook') && document.getElementById('facebook-page').value === '' && (window.facebookPages || []).length > 1) {
+    openModal('Choose a Facebook Page.', 'Select which connected Facebook Page should receive this post.');
     return;
   }
   if (selected.includes('instagram') && selectedMedia && !['image/jpeg', 'video/mp4', 'video/quicktime'].includes(selectedMedia.contentType)) {
@@ -229,6 +240,7 @@ document.getElementById('publish-button').addEventListener('click', async () => 
             },
             youtubeTitle: document.getElementById('youtube-title').value.trim(),
             youtubePrivacy: document.getElementById('youtube-privacy').value,
+            facebookPageId: document.getElementById('facebook-page').value,
           }),
         });
         const result = await response.json();
@@ -421,10 +433,16 @@ async function syncAccounts() {
     if (!response.ok) return;
     const accounts = await response.json();
     mediaStorageConfigured = Boolean(accounts.publicMediaConfigured);
+    window.facebookPages = accounts.facebook?.pages || [];
+    const pageSelect = document.getElementById('facebook-page');
+    pageSelect.replaceChildren(new Option('Choose a Facebook Page', ''));
+    for (const page of window.facebookPages) pageSelect.add(new Option(page.name, page.id));
+    if (window.facebookPages.length === 1) pageSelect.value = window.facebookPages[0].id;
     const statusFields = {
       linkedin: ['linkedin', 'linkedinConfigured'],
       x: ['x', 'xConfigured'],
       instagram: ['instagram', 'instagramConfigured'],
+      facebook: ['facebook', 'facebookConfigured'],
       tiktok: ['tiktok', 'tiktokConfigured'],
       youtube: ['youtube', 'youtubeConfigured'],
     };
@@ -512,7 +530,7 @@ async function initializeAppAccess() {
 
 initializeAppAccess();
 const connectionResult = new URLSearchParams(window.location.search).get('connection');
-if (['linkedin', 'x', 'instagram', 'tiktok', 'youtube'].includes(connectionResult)) {
+if (['linkedin', 'x', 'instagram', 'facebook', 'tiktok', 'youtube'].includes(connectionResult)) {
   const displayName = connectionResult === 'x' ? 'X' : connectionResult[0].toUpperCase() + connectionResult.slice(1);
   showToast(`${displayName} connected.`);
 }

@@ -5,6 +5,7 @@ import { instagramCredentialsReady } from '../lib/instagram.js';
 import { tiktokCredentialsReady } from '../lib/tiktok.js';
 import { youtubeCredentialsReady } from '../lib/youtube.js';
 import { getSocialAccount } from '../lib/social-storage.js';
+import { facebookCredentialsReady } from '../lib/facebook.js';
 
 export default async function handler(request, response) {
   if (!requireSession(request, response)) return;
@@ -19,6 +20,8 @@ export default async function handler(request, response) {
     const tiktokAccount = tiktokReady ? await getSocialAccount('tiktok') : null;
     const youtubeReady = youtubeCredentialsReady() && encryptionReady() && storageReady();
     const youtubeAccount = youtubeReady ? await getSocialAccount('youtube') : null;
+    const facebookReady = facebookCredentialsReady() && encryptionReady() && storageReady();
+    const facebookAccount = facebookReady ? await getSocialAccount('facebook') : null;
     response.status(200).json({
       linkedinConfigured: ready,
       linkedin: account ? { connected: true, name: account.name, picture: account.picture } : { connected: false },
@@ -35,6 +38,9 @@ export default async function handler(request, response) {
       youtubeConfigured: youtubeReady,
       youtube: youtubeAccount ? { connected: true, name: youtubeAccount.name, picture: youtubeAccount.picture } : { connected: false },
       youtubePublishingEnabled: Boolean(process.env.MEDIA_READ_WRITE_TOKEN) && youtubeReady && Boolean(youtubeAccount),
+      facebookConfigured: facebookReady,
+      facebook: facebookAccount ? { connected: true, name: facebookAccount.name, pages: facebookAccount.pages.map(({ id, name }) => ({ id, name })) } : { connected: false, pages: [] },
+      facebookPublishingEnabled: facebookReady && Boolean(facebookAccount?.pages?.length),
       publicMediaConfigured: Boolean(process.env.MEDIA_READ_WRITE_TOKEN),
     });
   } catch (error) {
