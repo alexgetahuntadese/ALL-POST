@@ -8,6 +8,14 @@ export default function handler(request, response) {
   const state = randomBytes(32).toString('base64url');
   setOAuthState(request, response, state, 'facebook');
   const url = new URL(`https://www.facebook.com/${process.env.FACEBOOK_API_VERSION || 'v26.0'}/dialog/oauth`);
-  url.search = new URLSearchParams({ client_id: process.env.META_APP_ID, redirect_uri: facebookRedirectUri(), response_type: 'code', scope: 'pages_show_list,pages_read_engagement,pages_manage_posts', state });
+  const params = {
+    client_id: process.env.META_APP_ID,
+    redirect_uri: facebookRedirectUri(),
+    response_type: 'code',
+    state,
+  };
+  if (process.env.FACEBOOK_CONFIG_ID) params.config_id = process.env.FACEBOOK_CONFIG_ID;
+  else params.scope = 'pages_show_list,pages_read_engagement,pages_manage_posts';
+  url.search = new URLSearchParams(params);
   response.writeHead(302, { Location: url.toString(), 'Cache-Control': 'no-store' }); response.end();
 }
