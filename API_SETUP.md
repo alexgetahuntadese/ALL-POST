@@ -51,6 +51,8 @@ The Meta app ID (`2208962596689983`), app secret, Facebook callback, API version
 
 After connecting, choose the Page in the composer. Text posts and single JPEG photo posts are supported; videos and multi-photo posts are not enabled yet. The Page access tokens are encrypted in private Blob storage.
 
+Facebook Groups are not available for direct publishing: Meta removed the Groups API and its `publish_to_groups` permission across all Graph API versions in April 2024. ALL-POST supports a manual group-sharing workflow instead: save group links locally, then open a group and copy the current post so you can review and publish it yourself.
+
 ## TikTok
 
 Add `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, and `TIKTOK_REDIRECT_URI=https://all-post.vercel.app/api/oauth/tiktok/callback` as Production secrets. Enable Login Kit and Content Posting API / Direct Post, and request `user.info.basic` and `video.publish`.

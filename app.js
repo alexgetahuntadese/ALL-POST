@@ -19,6 +19,7 @@ let selectedMedia = null;
 let mediaStorageConfigured = false;
 let scheduleMode = false;
 let lastQueuePosts = [];
+const facebookGroupsKey = 'allpost-facebook-groups';
 
 const platformCopy = {
   facebook: ['Page post', 'Facebook Page'],
@@ -171,10 +172,96 @@ function updateMediaOptions() {
   const selected = selectedRows().map((row) => row.dataset.channel);
   document.getElementById('media-options').hidden = !selected.some((channel) => ['facebook', 'instagram', 'tiktok', 'youtube'].includes(channel)) && !selectedMedia;
   document.getElementById('facebook-options').hidden = !selected.includes('facebook');
+  document.getElementById('facebook-group-options').hidden = !selected.includes('facebook');
   document.getElementById('media-storage-note').hidden = mediaStorageConfigured || selectedMedia !== null;
   document.getElementById('tiktok-privacy-group').hidden = !selected.includes('tiktok');
   document.getElementById('youtube-options').hidden = !selected.includes('youtube');
 }
+
+function savedFacebookGroups() {
+  try {
+    const groups = JSON.parse(localStorage.getItem(facebookGroupsKey) || '[]');
+    return Array.isArray(groups) ? groups.filter((group) => group && typeof group.id === 'string' && typeof group.name === 'string' && typeof group.url === 'string') : [];
+  } catch { return []; }
+}
+
+function renderFacebookGroups() {
+  const list = document.getElementById('facebook-groups-list');
+  list.replaceChildren();
+  const groups = savedFacebookGroups();
+  if (!groups.length) {
+    const empty = document.createElement('small');
+    empty.className = 'facebook-group-empty';
+    empty.textContent = 'Add your first group above. Your saved list stays on this device.';
+    list.append(empty);
+    return;
+  }
+  for (const group of groups) {
+    const row = document.createElement('div');
+    row.className = 'facebook-group-row';
+    const name = document.createElement('span');
+    name.className = 'facebook-group-name';
+    name.textContent = group.name;
+    const open = document.createElement('button');
+    open.type = 'button';
+    open.className = 'group-open';
+    open.dataset.groupOpen = group.id;
+    open.textContent = 'Open + copy';
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'facebook-group-remove';
+    remove.dataset.groupRemove = group.id;
+    remove.textContent = 'Remove';
+    remove.setAttribute('aria-label', `Remove ${group.name}`);
+    row.append(name, open, remove);
+    list.append(row);
+  }
+}
+
+document.getElementById('facebook-group-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  const nameInput = document.getElementById('facebook-group-name');
+  const urlInput = document.getElementById('facebook-group-url');
+  const name = nameInput.value.trim();
+  let url;
+  try { url = new URL(urlInput.value.trim()); } catch { showToast('Enter a valid Facebook group link.'); return; }
+  if (!name || url.protocol !== 'https:' || url.username || url.password || !['facebook.com', 'www.facebook.com', 'm.facebook.com'].includes(url.hostname) || !/^\/groups\/[^/]+\/?$/.test(url.pathname)) {
+    showToast('Use a group link such as facebook.com/groups/your-group.');
+    return;
+  }
+  const groups = savedFacebookGroups();
+  const normalizedUrl = `https://www.facebook.com${url.pathname}`;
+  if (groups.some((group) => group.url === normalizedUrl)) { showToast('That group is already saved.'); return; }
+  groups.push({ id: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`, name, url: normalizedUrl, selected: true });
+  localStorage.setItem(facebookGroupsKey, JSON.stringify(groups));
+  nameInput.value = '';
+  urlInput.value = '';
+  renderFacebookGroups();
+  showToast('Facebook group saved on this device.');
+});
+
+document.getElementById('facebook-groups-list').addEventListener('click', async (event) => {
+  const removeId = event.target.dataset.groupRemove;
+  if (removeId) {
+    localStorage.setItem(facebookGroupsKey, JSON.stringify(savedFacebookGroups().filter((group) => group.id !== removeId)));
+    renderFacebookGroups();
+    return;
+  }
+  const openId = event.target.dataset.groupOpen;
+  if (!openId) return;
+  const group = savedFacebookGroups().find((item) => item.id === openId);
+  const text = textarea.value.trim();
+  if (!group) return;
+  if (!text) return showToast('Write your post before opening a group.');
+  window.open(group.url, '_blank', 'noopener,noreferrer');
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast(`Post copied. Review and publish it in ${group.name}.`);
+  } catch {
+    showToast(`Group opened. Copy your post and publish it in ${group.name}.`);
+  }
+});
+renderFacebookGroups();
 
 function saveDraft(showConfirmation = false) {
   const draft = {

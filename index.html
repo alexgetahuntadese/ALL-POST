@@ -58,6 +58,11 @@
               <div class="media-options" id="media-options" hidden>
                 <p class="media-storage-note" id="media-storage-note" hidden>Connect the public media store in Vercel before uploading photos or videos.</p>
                 <div class="media-option" id="facebook-options" hidden><label for="facebook-page">Facebook Page</label><select id="facebook-page"><option value="">Connect a Facebook Page first</option></select><small>Facebook supports text posts or a single JPEG photo here.</small></div>
+                <div class="media-option group-options" id="facebook-group-options" hidden>
+                  <div><label>Facebook Groups · manual sharing</label><small>Meta no longer supports third-party group publishing. ALL-POST can prepare your post and open each group, where you review and publish it yourself.</small></div>
+                  <form class="group-add-form" id="facebook-group-form"><input id="facebook-group-name" maxlength="60" placeholder="Group name" aria-label="Facebook group name" required /><input id="facebook-group-url" type="url" placeholder="https://facebook.com/groups/…" aria-label="Facebook group URL" required /><button type="submit">Add group</button></form>
+                  <div class="facebook-groups-list" id="facebook-groups-list" aria-live="polite"></div>
+                </div>
                 <div class="media-option" id="tiktok-privacy-group" hidden>
                   <p class="tiktok-note">Review these sharing settings. ALL-POST will upload the selected media to TikTok only after you agree below.</p>
                   <label for="tiktok-privacy">TikTok visibility</label><select id="tiktok-privacy"><option value="">Choose a TikTok privacy level</option></select>
