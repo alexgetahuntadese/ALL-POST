@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node build.js",
+    "test": "node --test",
     "start": "node --env-file-if-exists=.env server.js"
   },
   "engines": {

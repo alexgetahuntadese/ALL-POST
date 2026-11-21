@@ -22,6 +22,8 @@ export default async function handler(request, response) {
     const youtubeAccount = youtubeReady ? await getSocialAccount('youtube') : null;
     const facebookReady = facebookCredentialsReady() && encryptionReady() && storageReady();
     const facebookAccount = facebookReady ? await getSocialAccount('facebook') : null;
+    const telegramAccount = await getSocialAccount('telegram');
+    const webhookAccount = await getSocialAccount('webhook');
     response.status(200).json({
       linkedinConfigured: ready,
       linkedin: account ? { connected: true, name: account.name, picture: account.picture } : { connected: false },
@@ -41,6 +43,12 @@ export default async function handler(request, response) {
       facebookConfigured: facebookReady,
       facebook: facebookAccount ? { connected: true, name: facebookAccount.name, pages: facebookAccount.pages.map(({ id, name }) => ({ id, name })) } : { connected: false, pages: [] },
       facebookPublishingEnabled: facebookReady && Boolean(facebookAccount?.pages?.length),
+      telegramConfigured: encryptionReady() && storageReady(),
+      telegram: telegramAccount?.accessToken && telegramAccount.targets?.length ? { connected: true, name: telegramAccount.name, username: telegramAccount.username, targets: telegramAccount.targets.map(({ chatId, name }) => ({ chatId, name })) } : { connected: false, targets: telegramAccount?.targets || [] },
+      telegramPublishingEnabled: Boolean(telegramAccount?.accessToken && telegramAccount.targets?.length),
+      webhookConfigured: encryptionReady() && storageReady(),
+      webhook: webhookAccount ? { connected: true, name: new URL(webhookAccount.url).hostname } : { connected: false },
+      webhookPublishingEnabled: Boolean(webhookAccount),
       publicMediaConfigured: Boolean(process.env.MEDIA_READ_WRITE_TOKEN),
     });
   } catch (error) {

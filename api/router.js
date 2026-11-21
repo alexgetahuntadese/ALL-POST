@@ -6,6 +6,8 @@ import accountTikTokCreatorInfo from '../routes/accounts/tiktok/creator-info.js'
 import accountTikTokDisconnect from '../routes/accounts/tiktok/disconnect.js';
 import accountXDisconnect from '../routes/accounts/x/disconnect.js';
 import accountYouTubeDisconnect from '../routes/accounts/youtube/disconnect.js';
+import accountTelegram from '../routes/accounts/telegram.js';
+import accountWebhook from '../routes/accounts/webhook.js';
 import authLogin from '../routes/auth/login.js';
 import authLogout from '../routes/auth/logout.js';
 import authSession from '../routes/auth/session.js';
@@ -32,6 +34,8 @@ import publishTikTok from '../routes/publish/tiktok.js';
 import publishTikTokStatus from '../routes/publish/tiktok/status.js';
 import publishX from '../routes/publish/x.js';
 import publishYouTube from '../routes/publish/youtube.js';
+import publishTelegram from '../routes/publish/telegram.js';
+import publishWebhook from '../routes/publish/webhook.js';
 import queue from '../routes/queue.js';
 import publishQueue from '../routes/cron/publish-queue.js';
 
@@ -44,6 +48,8 @@ const handlers = new Map([
   ['accounts/tiktok/disconnect', accountTikTokDisconnect],
   ['accounts/x/disconnect', accountXDisconnect],
   ['accounts/youtube/disconnect', accountYouTubeDisconnect],
+  ['accounts/telegram', accountTelegram],
+  ['accounts/webhook', accountWebhook],
   ['auth/login', authLogin],
   ['auth/logout', authLogout],
   ['auth/session', authSession],
@@ -72,6 +78,8 @@ const handlers = new Map([
   ['publish/tiktok/status', publishTikTokStatus],
   ['publish/x', publishX],
   ['publish/youtube', publishYouTube],
+  ['publish/telegram', publishTelegram],
+  ['publish/webhook', publishWebhook],
 ]);
 
 export default async function handler(request, response) {

@@ -1,6 +1,6 @@
 # ALL-POST production setup
 
-ALL-POST has server-side OAuth and publishing flows for LinkedIn, X, and Facebook Page text posts, Facebook JPEG photo posts, Instagram photo/Reel posts, TikTok photo/video posts, and YouTube video uploads. Each provider still needs its own developer app, credentials, account consent, and sometimes platform review. Do not paste secrets into chat or commit them.
+ALL-POST has server-side publishing flows for LinkedIn, X text/photo/video posts, Facebook Page text/JPEG posts, Instagram photo/Reel posts, TikTok photo/video posts, YouTube video uploads, Telegram messages/media, and signed webhooks. OAuth platforms still need their own developer app, credentials, account consent, and sometimes platform review. Do not paste secrets into chat or commit them.
 
 ## Current production foundation
 
@@ -37,7 +37,7 @@ Text posting is implemented through LinkedIn’s Posts API. The existing LinkedI
 
 ## X
 
-Text posting uses OAuth 2.0 Authorization Code with PKCE. Add `X_CLIENT_ID`, `X_CLIENT_SECRET`, and `X_REDIRECT_URI=https://all-post.vercel.app/api/oauth/x/callback` as Production secrets in Vercel. Configure a confidential Web App OAuth client with read/write access and the callback above. Grant `tweet.read`, `tweet.write`, `users.read`, and `offline.access`.
+Posting uses OAuth 2.0 Authorization Code with PKCE. Add `X_CLIENT_ID`, `X_CLIENT_SECRET`, and `X_REDIRECT_URI=https://all-post.vercel.app/api/oauth/x/callback` as Production secrets in Vercel. Configure a confidential Web App OAuth client with read/write access and the callback above. Grant `tweet.read`, `tweet.write`, `users.read`, `media.write`, and `offline.access`; reconnect X after changing the requested scopes. Photos must be JPEG/PNG/WebP under 5 MB; videos must be MP4. X video length/file limits depend on the posting account.
 
 ## Instagram
 
@@ -65,10 +65,22 @@ The composer queries the connected creator’s current privacy options and accou
 
 Enable YouTube Data API v3 in Google Cloud and create a Web application OAuth client. Add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `YOUTUBE_REDIRECT_URI=https://all-post.vercel.app/api/oauth/youtube/callback` as Production secrets. Register the callback above and authorize `https://www.googleapis.com/auth/youtube.upload`. The composer requires a video title and a privacy choice; the post text is used as the description. This API flow uploads videos, not YouTube Community text posts.
 
+## Telegram
+
+Create a bot with [BotFather](https://t.me/BotFather), add it as an administrator in each channel or group, then select Telegram in the composer. Enter the bot token and one destination as `@channel_username` or a numeric `chat_id`. ALL-POST verifies the token with `getMe`, stores it encrypted, and lets you add more destinations without re-entering it. Choose destinations per post. Text is split at Telegram’s 4096-character limit; photo/video captions are split at 1024 characters with remaining parts sent as follow-up messages. Media groups support up to 10 JPEG/PNG photos or MP4 videos. Optional inline URL buttons require HTTPS links. Telegram’s Bot API permission and channel admin role are managed in Telegram; no OAuth callback or environment variable is required.
+
+## Webhook
+
+Select Webhook and configure a public HTTPS endpoint plus a 32–256 character secret. ALL-POST encrypts the destination and secret in private Blob storage. Each POST contains `{ id, scheduledAt, platform, text, media }` JSON and headers `X-ALL-POST-Event`, `X-ALL-POST-Timestamp`, `X-ALL-POST-Signature`, and `Idempotency-Key`. The signature is `sha256=` followed by the lowercase hex HMAC-SHA256 of `<timestamp>.<raw request body>`. Reject stale timestamps and use the idempotency key to deduplicate retries. Redirects are rejected, and hostnames resolving to private addresses are blocked. No environment variables or third-party approval are required.
+
+## Shared publishing and queue behavior
+
+All direct publish routes and scheduled jobs use the same `PlatformPublisher` adapter contract. Posts can use a different caption per selected platform, skip a platform, or choose the master media / no media. The queue stores a lifecycle result per platform with status, attempts, retry time, external ID/URL, and error code. Transient 429/5xx failures use capped exponential backoff (up to five attempts); auth/permission failures stay failed and show reconnection/permission guidance. Published platform results are retained if another destination fails. GitHub Actions concurrency serializes worker runs; if a worker stops after setting a platform to `publishing`, it is intentionally left for review rather than automatically resent, since platform APIs do not provide uniform exactly-once publishing guarantees.
+
 ## Security and limitations
 
 OAuth tokens are encrypted in private Blob storage. Keep the workspace password and all developer secrets in Vercel’s server-side environment settings. ALL-POST is currently a single-owner workspace, not a multi-user service. Published posts are sent to each selected provider; providers apply their own content, visibility, quota, review, and account restrictions. Media uploads are public by URL and are not automatically deleted after publishing, so remove uploaded files from the composer when they are no longer needed.
 
-Scheduled posts are stored in private Blob storage. GitHub Actions checks the queue after each push to `main` and about every five minutes. GitHub can delay scheduled runs under load, so exact-minute delivery is not guaranteed. The worker verifies a short-lived GitHub Actions OIDC token restricted to this repository, the `main` branch, and this workflow; no long-lived scheduler secret is needed. Each due post is claimed before sending; failed or interrupted jobs are not retried automatically, to reduce the risk of duplicate social posts. Review `partial`, `failed`, or long-running `processing` records before deciding whether to retry manually. Uploaded public media remains in Blob storage until removed.
+Scheduled posts are stored in private Blob storage. GitHub Actions checks the queue after each push to `main` and about every five minutes. GitHub can delay scheduled runs under load, so exact-minute delivery is not guaranteed. The worker verifies a short-lived GitHub Actions OIDC token restricted to this repository, the `main` branch, and this workflow; no long-lived scheduler secret is needed. Transient platform failures retry with exponential backoff up to five times; ambiguous interrupted sends remain `processing` for review. Review `partial`, `failed`, `retrying`, or long-running `processing` records before deciding whether to retry manually. Uploaded public media remains in Blob storage until removed.
 
 The workspace is still single-owner. Multi-user sign-in, team workspaces, and shared queues are not part of this release.
