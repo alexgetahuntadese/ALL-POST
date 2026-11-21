@@ -15,7 +15,7 @@ export default function handler(request, response) {
     client_id: process.env.META_APP_ID,
     redirect_uri: instagramRedirectUri(),
     response_type: 'code',
-    scope: 'instagram_business_basic,instagram_business_content_publish',
+    scope: 'instagram_business_basic,instagram_business_content_publishing',
     state,
   });
   response.writeHead(302, { Location: url.toString(), 'Cache-Control': 'no-store' });

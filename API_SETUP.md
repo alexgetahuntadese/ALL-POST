@@ -41,7 +41,7 @@ Text posting uses OAuth 2.0 Authorization Code with PKCE. Add `X_CLIENT_ID`, `X_
 
 ## Instagram
 
-Add `META_APP_ID`, `META_APP_SECRET`, and `INSTAGRAM_REDIRECT_URI=https://all-post.vercel.app/api/oauth/instagram/callback` as Production secrets. The integration uses Instagram Login and needs a Professional (Business or Creator) Instagram account with the Instagram API with Instagram Login product and `instagram_business_basic` plus `instagram_business_content_publish` permissions. Meta may require app review and an app mode change before non-role accounts can authorize or publish.
+Add `META_APP_ID`, `META_APP_SECRET`, and `INSTAGRAM_REDIRECT_URI=https://all-post.vercel.app/api/oauth/instagram/callback` as Production secrets. The integration uses Instagram Login and needs a Professional (Business or Creator) Instagram account with the Instagram API with Instagram Login product and `instagram_business_basic` plus `instagram_business_content_publishing` permissions. Meta may require app review and an app mode change before non-role accounts can authorize or publish.
 
 Supported media: JPEG photo posts and MP4/MOV Reels. The caption uses the composer text.
 
