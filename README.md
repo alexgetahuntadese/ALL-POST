@@ -26,7 +26,7 @@ Production URL: <https://all-post.vercel.app>. Vercel provides HTTPS without a c
 - Instagram: protected OAuth connection and photo/Reel publishing.
 - TikTok: protected OAuth connection and photo/video publishing, with creator privacy/interactions, consent, status polling, and a verified custom media domain requirement.
 - YouTube: protected OAuth connection and video uploads with title and privacy settings.
-- Scheduled posts use a private Blob-backed queue. GitHub Actions calls the worker about every five minutes after this workflow is merged to the repository's default branch. GitHub may delay scheduled runs under load.
+- Scheduled posts use a private Blob-backed queue. GitHub Actions checks after each push to `main` and about every five minutes. GitHub may delay scheduled runs under load.
 - The workspace remains single-owner. Multi-user sign-in, teams, and cross-user workspaces are not included.
 
 See [API_SETUP.md](API_SETUP.md) for the platform-by-platform access, credential, and approval checklist.

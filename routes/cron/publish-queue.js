@@ -39,7 +39,7 @@ async function authorized(request) {
       && String(claims.repository_id) === '1446870040'
       && claims.ref === 'refs/heads/main'
       && claims.workflow_ref === 'alexgetahuntadese/ALL-POST/.github/workflows/publish-queue.yml@refs/heads/main'
-      && ['schedule', 'workflow_dispatch'].includes(claims.event_name);
+      && ['push', 'schedule', 'workflow_dispatch'].includes(claims.event_name);
   } catch {
     return false;
   }

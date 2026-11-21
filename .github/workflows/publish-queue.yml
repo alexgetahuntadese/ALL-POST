@@ -3,6 +3,9 @@ name: Publish scheduled ALL-POST items
 on:
   schedule:
     - cron: '*/5 * * * *'
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
