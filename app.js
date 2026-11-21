@@ -19,6 +19,7 @@ let selectedMedia = null;
 let mediaStorageConfigured = false;
 let scheduleMode = false;
 let lastQueuePosts = [];
+const platformOverrides = {};
 const facebookGroupsKey = 'allpost-facebook-groups';
 
 const platformCopy = {
@@ -68,9 +69,16 @@ function openScheduleModal() {
 }
 
 function composePayload() {
+  const channels = selectedRows().filter((row) => !platformOverrides[row.dataset.channel]?.skip).map((row) => row.dataset.channel);
+  const overrides = structuredClone(platformOverrides);
+  const buttonText = document.getElementById('telegram-button-text').value.trim();
+  const buttonUrl = document.getElementById('telegram-button-url').value.trim();
+  if (buttonText && buttonUrl) overrides.telegram = { ...overrides.telegram, buttons: [{ text: buttonText, url: buttonUrl }] };
   return {
     text: textarea.value,
-    channels: selectedRows().map((row) => row.dataset.channel),
+    channels,
+    overrides,
+    telegramDestinationIds: [...document.querySelectorAll('#telegram-targets [data-telegram-target]:checked')].map((input) => input.dataset.telegramTarget),
     mediaUrl: selectedMedia?.url || '',
     mediaType: selectedMedia?.contentType || '',
     mediaName: selectedMedia?.name || '',
@@ -114,14 +122,18 @@ function renderQueue(posts) {
     const title = document.createElement('strong');
     title.textContent = post.text || 'Scheduled post';
     const detail = document.createElement('small');
-    detail.textContent = `${post.status.replaceAll('_', ' ')} · ${new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(parsed)}`;
+    const retryTime = post.retryAt ? ` · retry after ${new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(new Date(post.retryAt))}` : '';
+    detail.textContent = `${post.status.replaceAll('_', ' ')} · ${new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(parsed)}${retryTime}`;
     info.append(title, detail);
     const actions = document.createElement('div');
     actions.className = 'queue-actions';
     for (const channel of (post.channels || []).slice(0, 3)) {
+      const result = (post.results || []).find((item) => item.channel === channel);
       const badge = document.createElement('i');
       badge.className = channel;
-      badge.textContent = ({ facebook: 'f', instagram: '◎', linkedin: 'in', x: '𝕏', youtube: '▶', tiktok: '♪' })[channel] || channel;
+      const stateMark = ({ pending: '…', publishing: '↗', published: '✓', partial: '½', failed: '!', retrying: '↻' })[result?.status] || '';
+      badge.textContent = `${({ facebook: 'f', instagram: '◎', linkedin: 'in', x: '𝕏', youtube: '▶', tiktok: '♪', telegram: '➤', webhook: '⌁' })[channel] || channel}${stateMark}`;
+      badge.title = `${channel}: ${result?.status || 'pending'}${result?.error ? ` · ${result.error}` : ''}`;
       actions.append(badge);
     }
     if (post.status === 'scheduled') {
@@ -163,7 +175,7 @@ function selectedRows() {
 function updateSelected() {
   const linkedin = rows.find((row) => row.dataset.channel === 'linkedin');
   document.getElementById('select-all').textContent = linkedin.querySelector('input').checked ? 'Deselect LinkedIn' : 'Select LinkedIn';
-  const names = selectedRows().map((row) => row.querySelector('.channel-info strong').textContent);
+  const names = selectedRows().filter((row) => !platformOverrides[row.dataset.channel]?.skip).map((row) => row.querySelector('.channel-info strong').textContent);
   document.getElementById('publish-label').textContent = names.length ? `Post to ${names.join(' + ')}` : 'Choose a channel';
   updateMediaOptions();
 }
@@ -176,6 +188,48 @@ function updateMediaOptions() {
   document.getElementById('media-storage-note').hidden = mediaStorageConfigured || selectedMedia !== null;
   document.getElementById('tiktok-privacy-group').hidden = !selected.includes('tiktok');
   document.getElementById('youtube-options').hidden = !selected.includes('youtube');
+  document.getElementById('telegram-options').hidden = !selected.includes('telegram');
+  document.getElementById('webhook-options').hidden = !selected.includes('webhook');
+  const overrideOptions = document.getElementById('platform-overrides');
+  overrideOptions.hidden = selected.length < 2;
+  renderPlatformOverrides(selected);
+}
+
+function renderPlatformOverrides(channels) {
+  const root = document.getElementById('platform-overrides-fields');
+  for (const field of root.querySelectorAll('[data-override-text]')) platformOverrides[field.dataset.overrideText] = { ...platformOverrides[field.dataset.overrideText], text: field.value };
+  for (const field of root.querySelectorAll('[data-override-skip]')) platformOverrides[field.dataset.overrideSkip] = { ...platformOverrides[field.dataset.overrideSkip], skip: field.checked };
+  root.replaceChildren();
+  for (const channel of channels) {
+    const row = document.createElement('div');
+    row.className = 'override-row';
+    const name = document.createElement('strong');
+    name.textContent = channel[0].toUpperCase() + channel.slice(1);
+    const skipLabel = document.createElement('label');
+    const skip = document.createElement('input');
+    skip.type = 'checkbox';
+    skip.checked = Boolean(platformOverrides[channel]?.skip);
+    skip.dataset.overrideSkip = channel;
+    const skipText = document.createElement('span');
+    skipText.textContent = 'Skip';
+    skipLabel.append(skip, skipText);
+    const input = document.createElement('textarea');
+    input.placeholder = 'Use the main post, or write platform-specific copy';
+    input.value = platformOverrides[channel]?.text || '';
+    input.maxLength = channel === 'x' ? 280 : channel === 'youtube' ? 5000 : 10000;
+    input.dataset.overrideText = channel;
+    input.addEventListener('input', () => { platformOverrides[channel] = { ...platformOverrides[channel], text: input.value, skip: skip.checked }; saveDraft(); });
+    skip.addEventListener('change', () => { platformOverrides[channel] = { ...platformOverrides[channel], text: input.value, skip: skip.checked }; updateSelected(); saveDraft(); });
+    const media = document.createElement('select');
+    media.className = 'override-media';
+    media.setAttribute('aria-label', `${channel} media selection`);
+    media.add(new Option('Use the main media', 'default'));
+    media.add(new Option('No media', 'none'));
+    media.value = platformOverrides[channel]?.mediaMode || 'default';
+    media.addEventListener('change', () => { platformOverrides[channel] = { ...platformOverrides[channel], text: input.value, skip: skip.checked, mediaMode: media.value }; saveDraft(); });
+    row.append(name, skipLabel, input, media);
+    root.append(row);
+  }
 }
 
 function savedFacebookGroups() {
@@ -263,10 +317,63 @@ document.getElementById('facebook-groups-list').addEventListener('click', async 
 });
 renderFacebookGroups();
 
+document.getElementById('telegram-save').addEventListener('click', async () => {
+  const button = document.getElementById('telegram-save');
+  button.disabled = true;
+  try {
+    const response = await fetch('/api/accounts/telegram', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: document.getElementById('telegram-token').value.trim(), destination: document.getElementById('telegram-destination').value.trim(), name: document.getElementById('telegram-name').value.trim() }) });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Could not save Telegram destination.');
+    document.getElementById('telegram-token').value = '';
+    document.getElementById('telegram-name').value = '';
+    document.getElementById('telegram-destination').value = '';
+    showToast('Telegram destination saved securely.');
+    await syncAccounts();
+    renderTelegramTargets(result.targets);
+  } catch (error) { openModal('Telegram setup could not be saved.', error.message); }
+  finally { button.disabled = false; }
+});
+
+function renderTelegramTargets(targets = []) {
+  const root = document.getElementById('telegram-targets');
+  root.replaceChildren();
+  let selectedTargetIds = [];
+  const hasSavedTargetSelection = localStorage.getItem('allpost-telegram-targets') !== null;
+  try { selectedTargetIds = JSON.parse(localStorage.getItem('allpost-telegram-targets') || '[]'); } catch { selectedTargetIds = []; }
+  for (const target of targets) {
+    const row = document.createElement('div'); row.className = 'facebook-group-row';
+    const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.dataset.telegramTarget = target.chatId; checkbox.setAttribute('aria-label', `Select ${target.name}`);
+    checkbox.checked = !hasSavedTargetSelection || selectedTargetIds.includes(target.chatId);
+    checkbox.addEventListener('change', () => {
+      const selected = [...document.querySelectorAll('#telegram-targets [data-telegram-target]:checked')].map((item) => item.dataset.telegramTarget);
+      localStorage.setItem('allpost-telegram-targets', JSON.stringify(selected));
+    });
+    const name = document.createElement('span'); name.className = 'facebook-group-name'; name.textContent = target.name;
+    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'facebook-group-remove'; remove.textContent = 'Remove';
+    remove.addEventListener('click', async () => {
+      const response = await fetch('/api/accounts/telegram', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chatId: target.chatId }) });
+      if (response.ok) { await syncAccounts(); renderTelegramTargets((await (await fetch('/api/accounts/telegram')).json()).targets); }
+    });
+    row.append(checkbox, name, remove); root.append(row);
+  }
+}
+
+document.getElementById('webhook-save').addEventListener('click', async () => {
+  const button = document.getElementById('webhook-save'); button.disabled = true;
+  try {
+    const response = await fetch('/api/accounts/webhook', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: document.getElementById('webhook-url').value.trim(), secret: document.getElementById('webhook-secret').value }) });
+    const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Could not configure webhook.');
+    document.getElementById('webhook-secret').value = '';
+    showToast('Signed webhook saved securely.'); await syncAccounts();
+  } catch (error) { openModal('Webhook setup could not be saved.', error.message); }
+  finally { button.disabled = false; }
+});
+
 function saveDraft(showConfirmation = false) {
   const draft = {
     text: textarea.value,
     channels: rows.filter((row) => row.querySelector('input').checked).map((row) => row.dataset.channel),
+    overrides: platformOverrides,
   };
   localStorage.setItem('allpost-draft', JSON.stringify(draft));
   draftState.textContent = 'Saved on this device';
@@ -296,6 +403,12 @@ rows.forEach((row) => {
     event.preventDefault();
     if (event.target.closest('.channel-status')) {
       const name = row.querySelector('.channel-info strong').textContent;
+      if (['telegram', 'webhook'].includes(row.dataset.channel)) {
+        checkbox.checked = true;
+        row.classList.add('selected');
+        updateSelected();
+        return;
+      }
       if (row.dataset.connected !== 'true') {
         if (row.dataset.configured !== 'true') {
           const setupMessages = {
@@ -370,10 +483,10 @@ loginForm.addEventListener('submit', async (event) => {
 });
 
 document.getElementById('publish-button').addEventListener('click', async () => {
-  const count = selectedRows().length;
+  const count = selectedRows().filter((row) => !platformOverrides[row.dataset.channel]?.skip).length;
   if (!count) return showToast('Choose at least one channel first.');
   if (!textarea.value.trim()) return openModal('Start with a thought.', 'Write a few words and your preview will come to life.');
-  const selected = selectedRows().map((row) => row.dataset.channel);
+  const selected = selectedRows().map((row) => row.dataset.channel).filter((channel) => !platformOverrides[channel]?.skip);
   if (selected.some((channel) => ['instagram', 'tiktok', 'youtube'].includes(channel)) && !selectedMedia) {
     openModal('Add photo or video.', 'Instagram, TikTok, and YouTube need an uploaded media file. Facebook and X can publish text only.');
     return;
@@ -398,7 +511,13 @@ document.getElementById('publish-button').addEventListener('click', async () => 
     openModal('Shorten the X post.', 'X posts are limited to 280 characters.');
     return;
   }
-  const notConnected = selected.filter((channel) => rows.find((row) => row.dataset.channel === channel)?.dataset.connected !== 'true');
+    const activeSelected = selected;
+    if (!activeSelected.length) return openModal('Keep one platform enabled.', 'Every selected channel is set to Skip. Turn one back on before publishing.');
+  if (activeSelected.includes('telegram') && !composePayload().telegramDestinationIds.length) return openModal('Choose Telegram destinations.', 'Select one or more Telegram channels or groups for this post.');
+  const telegramButtonText = document.getElementById('telegram-button-text').value.trim();
+  const telegramButtonUrl = document.getElementById('telegram-button-url').value.trim();
+  if (activeSelected.includes('telegram') && Boolean(telegramButtonText) !== Boolean(telegramButtonUrl)) return openModal('Finish the Telegram link button.', 'Add both a button label and an HTTPS link, or leave both fields empty.');
+    const notConnected = activeSelected.filter((channel) => rows.find((row) => row.dataset.channel === channel)?.dataset.connected !== 'true');
   if (notConnected.length) {
     openModal(`Connect ${notConnected.join(' and ')} first.`, 'Choose Connect on each selected channel and approve ALL-POST in the provider before publishing.');
     return;
@@ -420,15 +539,16 @@ document.getElementById('publish-button').addEventListener('click', async () => 
   button.setAttribute('aria-busy', 'true');
   try {
     const results = [];
-    for (const channel of selected) {
+    for (const channel of activeSelected) {
       try {
         const response = await fetch(`/api/publish/${channel}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            text: textarea.value,
-            mediaUrl: selectedMedia?.url,
-            mediaType: selectedMedia?.contentType,
+            text: platformOverrides[channel]?.text?.trim() || textarea.value,
+            mediaUrl: platformOverrides[channel]?.mediaMode === 'none' ? '' : platformOverrides[channel]?.mediaUrl || selectedMedia?.url,
+            mediaType: platformOverrides[channel]?.mediaMode === 'none' ? '' : platformOverrides[channel]?.mediaType || selectedMedia?.contentType,
+            telegramDestinationIds: composePayload().telegramDestinationIds,
             tiktokPrivacy: document.getElementById('tiktok-privacy').value,
             tiktokInteractions: {
               comments: document.getElementById('tiktok-comments').checked,
@@ -484,7 +604,7 @@ document.getElementById('publish-button').addEventListener('click', async () => 
   }
 });
 document.getElementById('schedule-button').addEventListener('click', () => {
-  if (!selectedRows().length) return showToast('Choose at least one channel first.');
+  if (!composePayload().channels.length) return showToast('Choose at least one active channel first.');
   if (!textarea.value.trim()) return openModal('Start with a thought.', 'Write a few words before scheduling your post.');
   openScheduleModal();
 });
@@ -650,6 +770,7 @@ if (storedDraft) {
 }
 if (saved) {
   textarea.value = typeof saved === 'string' ? saved : saved.text || '';
+  if (saved.overrides && typeof saved.overrides === 'object') Object.assign(platformOverrides, saved.overrides);
   if (saved.channels) rows.forEach((row) => {
     const checked = row.dataset.live === 'true' && saved.channels.includes(row.dataset.channel);
     row.querySelector('input').checked = checked;
@@ -663,6 +784,7 @@ async function syncAccounts() {
     const response = await fetch('/api/accounts', { cache: 'no-store' });
     if (!response.ok) return;
     const accounts = await response.json();
+    renderTelegramTargets(accounts.telegram?.targets || []);
     mediaStorageConfigured = Boolean(accounts.publicMediaConfigured);
     window.facebookPages = accounts.facebook?.pages || [];
     const pageSelect = document.getElementById('facebook-page');
@@ -676,6 +798,8 @@ async function syncAccounts() {
       facebook: ['facebook', 'facebookConfigured'],
       tiktok: ['tiktok', 'tiktokConfigured'],
       youtube: ['youtube', 'youtubeConfigured'],
+      telegram: ['telegram', 'telegramConfigured'],
+      webhook: ['webhook', 'webhookConfigured'],
     };
     for (const [channel, [accountKey, configuredKey]] of Object.entries(statusFields)) {
       const row = rows.find((item) => item.dataset.channel === channel);
