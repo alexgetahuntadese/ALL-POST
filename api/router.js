@@ -32,6 +32,8 @@ import publishTikTok from '../routes/publish/tiktok.js';
 import publishTikTokStatus from '../routes/publish/tiktok/status.js';
 import publishX from '../routes/publish/x.js';
 import publishYouTube from '../routes/publish/youtube.js';
+import queue from '../routes/queue.js';
+import publishQueue from '../routes/cron/publish-queue.js';
 
 const handlers = new Map([
   ['accounts', accounts],
@@ -46,6 +48,8 @@ const handlers = new Map([
   ['auth/logout', authLogout],
   ['auth/session', authSession],
   ['health', health],
+  ['queue', queue],
+  ['cron/publish-queue', publishQueue],
   ['media/delete', mediaDelete],
   ['media/public', mediaPublic],
   ['media/upload', mediaUpload],

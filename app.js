@@ -17,6 +17,8 @@ let toastTimer;
 let saveTimer;
 let selectedMedia = null;
 let mediaStorageConfigured = false;
+let scheduleMode = false;
+let lastQueuePosts = [];
 
 const platformCopy = {
   facebook: ['Page post', 'Facebook Page'],
@@ -35,10 +37,122 @@ function showToast(message) {
 }
 
 function openModal(title, body) {
+  scheduleMode = false;
+  document.getElementById('schedule-controls').hidden = true;
+  document.getElementById('modal-action').innerHTML = 'Got it <span>→</span>';
   document.getElementById('modal-title').textContent = title;
   document.getElementById('modal-body').textContent = body;
   modal.classList.add('open');
   document.getElementById('modal-action').focus();
+}
+
+function toLocalDateTimeValue(date) {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
+
+function openScheduleModal() {
+  openModal('Choose when to publish.', 'Choose the local date and time for your post. ALL-POST will publish it to the selected connected channels.');
+  const controls = document.getElementById('schedule-controls');
+  const input = document.getElementById('schedule-at');
+  const minTime = new Date(Date.now() + 2 * 60_000);
+  input.min = toLocalDateTimeValue(minTime);
+  const rounded = new Date(Date.now() + 20 * 60_000);
+  rounded.setMinutes(Math.ceil(rounded.getMinutes() / 15) * 15, 0, 0);
+  input.value = toLocalDateTimeValue(rounded);
+  controls.hidden = false;
+  scheduleMode = true;
+  document.getElementById('modal-action').innerHTML = 'Add to queue <span>→</span>';
+  input.focus();
+}
+
+function composePayload() {
+  return {
+    text: textarea.value,
+    channels: selectedRows().map((row) => row.dataset.channel),
+    mediaUrl: selectedMedia?.url || '',
+    mediaType: selectedMedia?.contentType || '',
+    mediaName: selectedMedia?.name || '',
+    tiktokPrivacy: document.getElementById('tiktok-privacy').value,
+    tiktokInteractions: {
+      comments: document.getElementById('tiktok-comments').checked,
+      duet: document.getElementById('tiktok-duet').checked,
+      stitch: document.getElementById('tiktok-stitch').checked,
+    },
+    tiktokBrand: {
+      branded: document.getElementById('tiktok-branded').checked,
+      ownBrand: document.getElementById('tiktok-own-brand').checked,
+    },
+    tiktokConsent: document.getElementById('tiktok-consent').checked,
+    youtubeTitle: document.getElementById('youtube-title').value.trim(),
+    youtubePrivacy: document.getElementById('youtube-privacy').value,
+    facebookPageId: document.getElementById('facebook-page').value,
+  };
+}
+
+function renderQueue(posts) {
+  lastQueuePosts = posts;
+  const list = document.getElementById('scheduled-list');
+  const fallback = document.getElementById('queue-fallback');
+  list.replaceChildren();
+  const visible = posts.slice(0, 5);
+  fallback.hidden = visible.length > 0;
+  for (const post of visible) {
+    const row = document.createElement('div');
+    row.className = 'queue-post';
+    const date = document.createElement('div');
+    date.className = 'queue-date';
+    const day = document.createElement('b');
+    const month = document.createElement('small');
+    const parsed = new Date(post.scheduledAt || post.createdAt);
+    day.textContent = new Intl.DateTimeFormat('en', { day: '2-digit' }).format(parsed);
+    month.textContent = new Intl.DateTimeFormat('en', { month: 'short' }).format(parsed).toUpperCase();
+    date.append(day, month);
+    const info = document.createElement('div');
+    info.className = 'queue-post-info';
+    const title = document.createElement('strong');
+    title.textContent = post.text || 'Scheduled post';
+    const detail = document.createElement('small');
+    detail.textContent = `${post.status.replaceAll('_', ' ')} · ${new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(parsed)}`;
+    info.append(title, detail);
+    const actions = document.createElement('div');
+    actions.className = 'queue-actions';
+    for (const channel of (post.channels || []).slice(0, 3)) {
+      const badge = document.createElement('i');
+      badge.className = channel;
+      badge.textContent = ({ facebook: 'f', instagram: '◎', linkedin: 'in', x: '𝕏', youtube: '▶', tiktok: '♪' })[channel] || channel;
+      actions.append(badge);
+    }
+    if (post.status === 'scheduled') {
+      const cancel = document.createElement('button');
+      cancel.className = 'queue-cancel';
+      cancel.type = 'button';
+      cancel.textContent = 'Cancel';
+      cancel.setAttribute('aria-label', 'Cancel scheduled post');
+      cancel.addEventListener('click', async () => {
+        cancel.disabled = true;
+        try {
+          const response = await fetch('/api/queue', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: post.id }) });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || 'Could not cancel this post.');
+          showToast('Scheduled post cancelled.');
+          await loadQueue();
+        } catch (error) { showToast(error.message); cancel.disabled = false; }
+      });
+      actions.append(cancel);
+    }
+    row.append(date, info, actions);
+    list.append(row);
+  }
+}
+
+async function loadQueue() {
+  try {
+    const response = await fetch('/api/queue', { cache: 'no-store' });
+    if (!response.ok) return;
+    const data = await response.json();
+    renderQueue(Array.isArray(data.posts) ? data.posts : []);
+  } catch { /* The static preview can still be used without the API. */ }
 }
 
 function selectedRows() {
@@ -283,14 +397,44 @@ document.getElementById('publish-button').addEventListener('click', async () => 
   }
 });
 document.getElementById('schedule-button').addEventListener('click', () => {
-  openModal('Scheduling comes next.', 'Your draft is saved on this device. Connect social accounts and add a server before scheduling live posts.');
+  if (!selectedRows().length) return showToast('Choose at least one channel first.');
+  if (!textarea.value.trim()) return openModal('Start with a thought.', 'Write a few words before scheduling your post.');
+  openScheduleModal();
 });
 
 function closeModal() {
   modal.classList.remove('open');
 }
 document.getElementById('modal-close').addEventListener('click', closeModal);
-document.getElementById('modal-action').addEventListener('click', closeModal);
+document.getElementById('modal-action').addEventListener('click', async () => {
+  if (!scheduleMode) return closeModal();
+  const scheduledAt = document.getElementById('schedule-at').value;
+  if (!scheduledAt) return showToast('Choose a date and time.');
+  const action = document.getElementById('modal-action');
+  action.disabled = true;
+  action.setAttribute('aria-busy', 'true');
+  try {
+    const response = await fetch('/api/queue', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...composePayload(), scheduledAt: new Date(scheduledAt).toISOString() }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Could not schedule this post.');
+    closeModal();
+    showToast('Post added to your scheduled queue.');
+    await loadQueue();
+  } catch (error) {
+    document.getElementById('modal-title').textContent = 'Could not schedule this post.';
+    document.getElementById('modal-body').textContent = error.message;
+    scheduleMode = false;
+    document.getElementById('schedule-controls').hidden = true;
+    action.innerHTML = 'Got it <span>→</span>';
+  } finally {
+    action.disabled = false;
+    action.removeAttribute('aria-busy');
+  }
+});
 modal.addEventListener('click', (event) => { if (event.target === modal) closeModal(); });
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
@@ -478,6 +622,7 @@ async function syncAccounts() {
       }
     }
     updateMediaOptions();
+    await loadQueue();
   } catch {
     // The browser-only prototype still works when the local API server is not running.
   }

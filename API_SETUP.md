@@ -67,4 +67,6 @@ Enable YouTube Data API v3 in Google Cloud and create a Web application OAuth cl
 
 OAuth tokens are encrypted in private Blob storage. Keep the workspace password and all developer secrets in Vercel’s server-side environment settings. ALL-POST is currently a single-owner workspace, not a multi-user service. Published posts are sent to each selected provider; providers apply their own content, visibility, quota, review, and account restrictions. Media uploads are public by URL and are not automatically deleted after publishing, so remove uploaded files from the composer when they are no longer needed.
 
-Scheduling, a persistent post history, multi-user accounts, and team workspaces are not part of this release.
+Scheduled posts are stored in private Blob storage and checked by a Vercel Cron Job every 15 minutes on the Hobby plan. Set a random `CRON_SECRET` of at least 32 characters in the Vercel Production environment before enabling scheduling. A post can therefore publish up to 15 minutes after its selected time. Each due post is claimed before sending; failed or interrupted jobs are not retried automatically, to reduce the risk of duplicate social posts. Review `partial`, `failed`, or long-running `processing` records before deciding whether to retry manually. Uploaded public media remains in Blob storage until removed.
+
+The workspace is still single-owner. Multi-user sign-in, team workspaces, and shared queues are not part of this release.
