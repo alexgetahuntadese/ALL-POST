@@ -25,6 +25,71 @@ let calendarCursor = new Date();
 let selectedCalendarDate = null;
 const platformOverrides = {};
 const facebookGroupsKey = 'allpost-facebook-groups';
+const ETHIOPIA_TIME_ZONE = 'Africa/Addis_Ababa';
+let interfaceLanguage = localStorage.getItem('allpost-language') === 'am' ? 'am' : 'en';
+
+function zonedParts(date, timeZone = ETHIOPIA_TIME_ZONE) {
+  return Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
+    timeZone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+  }).formatToParts(date).filter((part) => part.type !== 'literal').map(({ type, value }) => [type, Number(value)]));
+}
+
+function toZonedDateTimeValue(date, timeZone = ETHIOPIA_TIME_ZONE) {
+  const p = zonedParts(date, timeZone);
+  return `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}T${String(p.hour).padStart(2, '0')}:${String(p.minute).padStart(2, '0')}`;
+}
+
+function fromZonedDateTimeValue(value, timeZone = ETHIOPIA_TIME_ZONE) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
+  if (!match) return new Date(NaN);
+  const [, y, mo, d, h, mi] = match.map(Number);
+  const wanted = Date.UTC(y, mo - 1, d, h, mi);
+  let instant = wanted;
+  for (let i = 0; i < 3; i += 1) {
+    const p = zonedParts(new Date(instant), timeZone);
+    instant += wanted - Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute);
+  }
+  return new Date(instant);
+}
+
+function formatDate(date, options = {}) {
+  const locale = interfaceLanguage === 'am' ? 'am-ET' : 'en-ET';
+  return new Intl.DateTimeFormat(locale, { timeZone: ETHIOPIA_TIME_ZONE, ...options }).format(date);
+}
+
+function updateTodayLabel() {
+  document.querySelector('.today-label').textContent = formatDate(new Date(), { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+const translations = {
+  'Workspace': 'የሥራ ቦታ', 'Compose': 'ጽሑፍ አዘጋጅ', 'Queue': 'የሚጠብቁ', 'Calendar': 'የጊዜ ሰሌዳ', 'Analytics': 'ትንታኔ', 'Drafts': 'ረቂቆች',
+  'YOUR SOCIAL DESK': 'የማህበራዊ ሚዲያ ማዕከል', 'Make one post.': 'አንድ ጽሑፍ ያዘጋጁ።', 'Share it everywhere.': 'በሁሉም ቦታ ያጋሩ።',
+  'Write once, then publish to the channels you choose.': 'አንድ ጊዜ ይጻፉ፤ በመረጡት ቻናሎች ያጋሩ።', 'Your post': 'ጽሑፍዎ', 'Start with one idea. Make it yours.': 'በአንድ ሀሳብ ይጀምሩ። የእርስዎ ያድርጉት።',
+  'Pick your places': 'የሚያጋሩባቸውን ይምረጡ', 'Publish': 'ያጋሩ', 'Schedule': 'ጊዜ ይወስኑ', 'Save draft': 'ረቂቅ ያስቀምጡ', 'Add a tag': 'መለያ ጨምር',
+  'Made for your time.': 'ለእርስዎ ሰዓት የተዘጋጀ።', 'Scheduling uses Addis Ababa time (EAT, UTC+3). Write in English or አማርኛ.': 'የጊዜ ሰሌዳው የአዲስ አበባን ሰዓት (EAT, UTC+3) ይጠቀማል። በእንግሊዝኛ ወይም በአማርኛ ይጻፉ።',
+  'Explore plans': 'ዕቅዶችን ይመልከቱ', 'Sign out': 'ውጣ', 'View queue': 'የሚጠብቁትን ይመልከቱ', 'See how it lands.': 'እንዴት እንደሚታይ ይመልከቱ።',
+  'Write something good': 'ጥሩ ነገር ይጻፉ',
+  'Live preview': 'ቅድመ እይታ', 'A little momentum': 'ቀጣይ እርምጃ', 'Nothing scheduled for this day.': 'ለዚህ ቀን ምንም አልተያዘም።',
+  'Start with a thought.': 'በሀሳብ ይጀምሩ።', 'Choose a date and time.': 'ቀንና ሰዓት ይምረጡ።', 'Got it': 'ገባኝ', 'Add to queue': 'ወደ ዝርዝር ጨምር',
+};
+
+function applyLanguage() {
+  document.documentElement.lang = interfaceLanguage;
+  document.getElementById('language-picker').value = interfaceLanguage;
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    if (!node.__allpostOriginalText) node.__allpostOriginalText = node.nodeValue;
+    const original = node.__allpostOriginalText;
+    const key = original.trim();
+    if (!key || !translations[key]) continue;
+    const translated = interfaceLanguage === 'am' ? translations[key] : key;
+    node.nodeValue = `${original.match(/^\s*/)?.[0] || ''}${translated}${original.match(/\s*$/)?.[0] || ''}`;
+  }
+  const postText = document.getElementById('post-text');
+  postText.placeholder = interfaceLanguage === 'am' ? 'ምን ማጋራት ይፈልጋሉ? ሀሳብዎን፣ ስኬትዎን ወይም ጠቃሚ ነገር ይጻፉ…' : 'What’s on your mind? Share a thought, a win, or something worth passing on…';
+  updateTodayLabel();
+}
 
 const platformCopy = {
   facebook: ['Page post', 'Facebook Page'],
@@ -52,20 +117,15 @@ function openModal(title, body) {
   document.getElementById('modal-action').focus();
 }
 
-function toLocalDateTimeValue(date) {
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
-  return local.toISOString().slice(0, 16);
-}
-
 function openScheduleModal() {
-  openModal('Choose when to publish.', 'Choose the local date and time for your post. ALL-POST will publish it to the selected connected channels.');
+  openModal('Choose when to publish.', 'Choose a date and time in Addis Ababa (EAT, UTC+3). ALL-POST will publish it to the selected connected channels.');
   const controls = document.getElementById('schedule-controls');
   const input = document.getElementById('schedule-at');
   const minTime = new Date(Date.now() + 2 * 60_000);
-  input.min = toLocalDateTimeValue(minTime);
+  input.min = toZonedDateTimeValue(minTime);
   const rounded = new Date(Date.now() + 20 * 60_000);
   rounded.setMinutes(Math.ceil(rounded.getMinutes() / 15) * 15, 0, 0);
-  input.value = toLocalDateTimeValue(rounded);
+  input.value = toZonedDateTimeValue(rounded);
   controls.hidden = false;
   scheduleMode = true;
   document.getElementById('modal-action').innerHTML = 'Add to queue <span>→</span>';
@@ -119,16 +179,16 @@ function renderQueue(posts) {
     const day = document.createElement('b');
     const month = document.createElement('small');
     const parsed = new Date(post.scheduledAt || post.createdAt);
-    day.textContent = new Intl.DateTimeFormat('en', { day: '2-digit' }).format(parsed);
-    month.textContent = new Intl.DateTimeFormat('en', { month: 'short' }).format(parsed).toUpperCase();
+    day.textContent = formatDate(parsed, { day: '2-digit' });
+    month.textContent = formatDate(parsed, { month: 'short' }).toUpperCase();
     date.append(day, month);
     const info = document.createElement('div');
     info.className = 'queue-post-info';
     const title = document.createElement('strong');
     title.textContent = post.text || 'Scheduled post';
     const detail = document.createElement('small');
-    const retryTime = post.retryAt ? ` · retry after ${new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(new Date(post.retryAt))}` : '';
-    detail.textContent = `${post.status.replaceAll('_', ' ')} · ${new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(parsed)}${retryTime}`;
+    const retryTime = post.retryAt ? ` · retry after ${formatDate(new Date(post.retryAt), { timeStyle: 'short' })}` : '';
+    detail.textContent = `${post.status.replaceAll('_', ' ')} · ${formatDate(parsed, { dateStyle: 'medium', timeStyle: 'short' })}${retryTime}`;
     info.append(title, detail);
     const actions = document.createElement('div');
     actions.className = 'queue-actions';
@@ -171,7 +231,7 @@ function renderQueue(posts) {
       for (const post of [...posts].sort((a, b) => Date.parse(b.scheduledAt || b.createdAt) - Date.parse(a.scheduledAt || a.createdAt))) {
         const row = document.createElement('div'); row.className = 'queue-post full-queue-item';
         const title = document.createElement('strong'); title.textContent = post.text || 'Scheduled post';
-        const detail = document.createElement('small'); detail.textContent = `${post.status} · ${new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(post.scheduledAt || post.createdAt))}`;
+        const detail = document.createElement('small'); detail.textContent = `${post.status} · ${formatDate(new Date(post.scheduledAt || post.createdAt), { dateStyle: 'medium', timeStyle: 'short' })}`;
         const content = document.createElement('div'); content.className = 'queue-post-info'; content.append(title, detail);
         const badges = document.createElement('div'); badges.className = 'queue-actions';
         for (const channel of post.channels || []) { const result = (post.results || []).find((item) => item.channel === channel); const badge = document.createElement('i'); badge.className = channel; badge.textContent = `${channel} · ${result?.status || 'pending'}`; badge.title = result?.error || ''; badges.append(badge); }
@@ -184,7 +244,7 @@ function renderQueue(posts) {
   renderAnalytics(posts);
 }
 
-function dayKey(date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; }
+function dayKey(date) { const p = zonedParts(date); return `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`; }
 
 function renderCalendar() {
   const grid = document.getElementById('calendar-grid');
@@ -213,11 +273,11 @@ function selectCalendarDay(date) {
   selectedCalendarDate = date;
   const key = dayKey(date);
   document.querySelectorAll('.calendar-cell').forEach((cell) => cell.classList.toggle('selected', cell.dataset.calendarDay === key));
-  document.getElementById('calendar-day-title').textContent = new Intl.DateTimeFormat(undefined, { dateStyle: 'full' }).format(date);
+  document.getElementById('calendar-day-title').textContent = formatDate(date, { dateStyle: 'full' });
   const root = document.getElementById('calendar-day-posts'); root.replaceChildren();
   const matches = lastQueuePosts.filter((post) => dayKey(new Date(post.scheduledAt || post.createdAt)) === key);
   if (!matches.length) { const empty = document.createElement('div'); empty.className = 'queue-empty'; empty.textContent = 'Nothing scheduled for this day.'; root.append(empty); return; }
-  for (const post of matches) { const row = document.createElement('div'); row.className = 'queue-post'; const info = document.createElement('div'); info.className = 'queue-post-info'; const title = document.createElement('strong'); title.textContent = post.text || 'Scheduled post'; const detail = document.createElement('small'); detail.textContent = `${post.status} · ${new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(new Date(post.scheduledAt || post.createdAt))} · ${(post.channels || []).join(', ')}`; info.append(title, detail); row.append(info); root.append(row); }
+  for (const post of matches) { const row = document.createElement('div'); row.className = 'queue-post'; const info = document.createElement('div'); info.className = 'queue-post-info'; const title = document.createElement('strong'); title.textContent = post.text || 'Scheduled post'; const detail = document.createElement('small'); detail.textContent = `${post.status} · ${formatDate(new Date(post.scheduledAt || post.createdAt), { timeStyle: 'short' })} · ${(post.channels || []).join(', ')}`; info.append(title, detail); row.append(info); root.append(row); }
 }
 
 function renderAnalytics(posts) {
@@ -767,7 +827,7 @@ document.getElementById('modal-action').addEventListener('click', async () => {
     const response = await fetch('/api/queue', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...composePayload(), scheduledAt: new Date(scheduledAt).toISOString() }),
+      body: JSON.stringify({ ...composePayload(), scheduledAt: fromZonedDateTimeValue(scheduledAt).toISOString() }),
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Could not schedule this post.');
@@ -908,7 +968,7 @@ document.getElementById('calendar-compose').addEventListener('click', () => {
   openScheduleModal();
   const date = new Date(selectedCalendarDate.getFullYear(), selectedCalendarDate.getMonth(), selectedCalendarDate.getDate(), 9, 0, 0);
   if (date.getTime() < Date.now() + 2 * 60_000) date.setTime(Date.now() + 20 * 60_000);
-  document.getElementById('schedule-at').value = toLocalDateTimeValue(date);
+  document.getElementById('schedule-at').value = toZonedDateTimeValue(date);
 });
 for (const id of ['queue-compose', 'draft-compose']) document.getElementById(id).addEventListener('click', () => {
   if (id === 'draft-compose') { activeDraftId = null; textarea.value = ''; selectedMedia = null; document.getElementById('media-upload-status').hidden = true; document.getElementById('youtube-title').value = ''; document.getElementById('youtube-privacy').value = ''; document.getElementById('tiktok-privacy').value = ''; document.getElementById('tiktok-consent').checked = false; Object.keys(platformOverrides).forEach((key) => delete platformOverrides[key]); rows.forEach((row) => { const checked = row.dataset.channel === 'linkedin'; row.querySelector('input').checked = checked; row.classList.toggle('selected', checked); }); updateSelected(); refreshPreview(); saveDraft(); }
@@ -1057,6 +1117,9 @@ if (['linkedin', 'x', 'instagram', 'facebook', 'tiktok', 'youtube'].includes(con
   showToast(`${displayName} connected.`);
 }
 if (connectionResult) window.history.replaceState({}, '', window.location.pathname + window.location.hash);
-document.querySelector('.today-label').textContent = new Intl.DateTimeFormat('en', {
-  weekday: 'long', month: 'long', day: 'numeric', timeZone: 'Africa/Addis_Ababa',
-}).format(new Date());
+document.getElementById('language-picker').addEventListener('change', (event) => {
+  interfaceLanguage = event.target.value === 'am' ? 'am' : 'en';
+  localStorage.setItem('allpost-language', interfaceLanguage);
+  applyLanguage();
+});
+applyLanguage();

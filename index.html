@@ -37,11 +37,12 @@
       </aside>
 
       <main class="main-content" id="home">
-        <header class="topbar"><div class="breadcrumbs">Workspace <span>/</span> <strong>Compose</strong></div><div class="topbar-right"><span class="today-label">Wednesday, November 5</span><button class="help-button" aria-label="Help">?</button><button class="logout-button" id="logout-button" type="button" hidden>Sign out</button><div class="top-avatar">AG</div></div></header>
+        <header class="topbar"><div class="breadcrumbs">Workspace <span>/</span> <strong>Compose</strong></div><div class="topbar-right"><span class="today-label"></span><label class="language-picker"><span class="sr-only">Interface language</span><select id="language-picker" aria-label="Interface language"><option value="en">English</option><option value="am">አማርኛ</option></select></label><span class="timezone-label" title="Scheduled posts use East Africa Time">EAT · UTC+3</span><button class="help-button" aria-label="Help">?</button><button class="logout-button" id="logout-button" type="button" hidden>Sign out</button><div class="top-avatar">AG</div></div></header>
         <div class="page-wrap" id="compose">
           <div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> YOUR SOCIAL DESK</div><h1>Make one post.<br /><span>Share it everywhere.</span></h1><p class="heading-copy">Write once, then publish to the channels you choose.</p></div><div class="heading-decoration"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="orbit-core">a<span>.</span></div><span class="orbit-star star-one">✳</span><span class="orbit-star star-two">✦</span></div></div>
           <div class="composer-layout">
             <section class="compose-column">
+              <div class="ethiopia-note"><span aria-hidden="true">🇪🇹</span><span><strong>Made for your time.</strong> Scheduling uses Addis Ababa time (EAT, UTC+3). Write in English or አማርኛ.</span></div>
               <div class="section-title"><div class="step-number">01</div><div><h2>Your post</h2><p>Start with one idea. Make it yours.</p></div><button class="save-draft" id="save-draft">↗ <span>Save draft</span></button></div>
               <div class="composer-card">
                 <div class="composer-toolbar"><span class="toolbar-label">WRITE SOMETHING GOOD</span><span class="draft-state" id="draft-state">Saved on this device</span></div>
@@ -112,7 +113,7 @@
       </main>
     </div>
     <div class="toast" id="toast" role="status"></div>
-    <div class="modal-backdrop" id="modal"><div class="modal-card"><button class="modal-close" id="modal-close">×</button><div class="modal-symbol">✦</div><span class="step-label">A LITTLE MORE TO GO</span><h2 id="modal-title">Your post is ready.</h2><p id="modal-body">Connect your social accounts to publish your first post from ALL-POST.</p><div class="schedule-controls" id="schedule-controls" hidden><label for="schedule-at">Publish date and time</label><input id="schedule-at" type="datetime-local" /><small>GitHub checks the queue about every five minutes; runs may be delayed.</small></div><button class="modal-action" id="modal-action">Got it <span>→</span></button></div></div>
+    <div class="modal-backdrop" id="modal"><div class="modal-card"><button class="modal-close" id="modal-close">×</button><div class="modal-symbol">✦</div><span class="step-label">A LITTLE MORE TO GO</span><h2 id="modal-title">Your post is ready.</h2><p id="modal-body">Connect your social accounts to publish your first post from ALL-POST.</p><div class="schedule-controls" id="schedule-controls" hidden><label for="schedule-at">Publish date and time · Addis Ababa (EAT)</label><input id="schedule-at" type="datetime-local" /><small>Times are East Africa Time (UTC+3). The queue checks about every five minutes; delivery may be delayed.</small></div><button class="modal-action" id="modal-action">Got it <span>→</span></button></div></div>
     <div class="login-gate" id="login-gate" aria-labelledby="login-title" hidden>
       <form class="login-card" id="login-form">
         <a class="brand login-brand" href="#home"><span class="brand-mark">a<span>.</span></span><span>all-post</span></a>
