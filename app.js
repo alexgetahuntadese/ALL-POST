@@ -63,6 +63,9 @@ function updateTodayLabel() {
 
 const translations = {
   'Workspace': 'የሥራ ቦታ', 'Compose': 'ጽሑፍ አዘጋጅ', 'Queue': 'የሚጠብቁ', 'Calendar': 'የጊዜ ሰሌዳ', 'Analytics': 'ትንታኔ', 'Drafts': 'ረቂቆች',
+  'One idea.': 'አንድ ሀሳብ።', 'Everywhere you belong.': 'በሁሉም ቦታ ይድረስ።', 'Write once. Shape it for each platform. Show up consistently.': 'አንድ ጊዜ ይጻፉ። ለእያንዳንዱ መድረክ ያስተካክሉ። በቋሚነት ይታዩ።',
+  'YOUR FIRST STEP': 'የመጀመሪያ እርምጃዎ', 'Bring your channels together': 'ቻናሎችዎን በአንድ ቦታ ያምጡ', 'Connect a social account, then create your first post from one simple desk.': 'የማህበራዊ ሚዲያ መለያዎን ያገናኙ፤ ከዚያ የመጀመሪያ ጽሑፍዎን ያዘጋጁ።', 'Connect a channel': 'ቻናል ያገናኙ', 'Start writing': 'መጻፍ ይጀምሩ',
+  'READY WHEN YOU ARE': 'ዝግጁ ነው', 'Write your post, choose where it goes, then publish it now or schedule it for Addis Ababa time.': 'ጽሑፍዎን ያዘጋጁ፣ የሚያጋሩበትን ይምረጡ፤ አሁን ያጋሩ ወይም በአዲስ አበባ ሰዓት ያቅዱ።',
   'YOUR SOCIAL DESK': 'የማህበራዊ ሚዲያ ማዕከል', 'Make one post.': 'አንድ ጽሑፍ ያዘጋጁ።', 'Share it everywhere.': 'በሁሉም ቦታ ያጋሩ።',
   'Write once, then publish to the channels you choose.': 'አንድ ጊዜ ይጻፉ፤ በመረጡት ቻናሎች ያጋሩ።', 'Your post': 'ጽሑፍዎ', 'Start with one idea. Make it yours.': 'በአንድ ሀሳብ ይጀምሩ። የእርስዎ ያድርጉት።',
   'Pick your places': 'የሚያጋሩባቸውን ይምረጡ', 'Publish': 'ያጋሩ', 'Schedule': 'ጊዜ ይወስኑ', 'Save draft': 'ረቂቅ ያስቀምጡ', 'Add a tag': 'መለያ ጨምር',
@@ -364,11 +367,38 @@ function selectedRows() {
 }
 
 function updateSelected() {
-  const linkedin = rows.find((row) => row.dataset.channel === 'linkedin');
-  document.getElementById('select-all').textContent = linkedin.querySelector('input').checked ? 'Deselect LinkedIn' : 'Select LinkedIn';
+  const selectButton = document.getElementById('select-all');
+  const connectedRows = rows.filter((row) => row.dataset.connected === 'true');
+  const hasSelectedConnection = connectedRows.some((row) => row.querySelector('input').checked);
+  selectButton.textContent = !connectedRows.length ? 'Connect accounts first' : hasSelectedConnection ? 'Clear selection' : `Select connected (${connectedRows.length})`;
+  selectButton.disabled = connectedRows.length === 0;
   const names = selectedRows().filter((row) => !platformOverrides[row.dataset.channel]?.skip).map((row) => row.querySelector('.channel-info strong').textContent);
-  document.getElementById('publish-label').textContent = names.length ? `Post to ${names.join(' + ')}` : 'Choose a channel';
+  const unconnected = selectedRows().filter((row) => row.dataset.connected !== 'true').map((row) => row.querySelector('.channel-info strong').textContent);
+  document.getElementById('publish-label').textContent = unconnected.length ? `Connect ${unconnected.join(' + ')} first` : names.length ? `Post to ${names.join(' + ')}` : connectedRows.length ? 'Choose a channel' : 'Connect a channel first';
   updateMediaOptions();
+}
+
+function updateWelcome() {
+  const connected = rows.filter((row) => row.dataset.connected === 'true');
+  const banner = document.getElementById('welcome-banner');
+  const title = document.getElementById('welcome-title');
+  const description = document.getElementById('welcome-description');
+  const action = document.getElementById('welcome-action');
+  if (connected.length) {
+    banner.classList.add('is-ready');
+    document.getElementById('welcome-kicker').textContent = 'READY WHEN YOU ARE';
+    title.textContent = `${connected.length} ${connected.length === 1 ? 'channel' : 'channels'} connected`;
+    description.textContent = 'Write your post, choose where it goes, then publish now or schedule it for Addis Ababa time.';
+    action.innerHTML = 'Start writing <span>→</span>';
+    action.dataset.action = 'compose';
+  } else {
+    banner.classList.remove('is-ready');
+    document.getElementById('welcome-kicker').textContent = 'YOUR FIRST STEP';
+    title.textContent = 'Bring your channels together';
+    description.textContent = 'Connect a social account, then create your first post from one simple desk.';
+    action.innerHTML = 'Connect a channel <span>→</span>';
+    action.dataset.action = 'connect';
+  }
 }
 
 function updateMediaOptions() {
@@ -590,6 +620,12 @@ textarea.addEventListener('input', refreshPreview);
 
 rows.forEach((row) => {
   const checkbox = row.querySelector('input');
+  const status = row.querySelector('.channel-status');
+  status.setAttribute('role', 'button');
+  status.tabIndex = 0;
+  status.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); status.click(); }
+  });
   row.addEventListener('click', (event) => {
     if (event.target === checkbox) return;
     event.preventDefault();
@@ -637,12 +673,35 @@ rows.forEach((row) => {
 });
 
 document.getElementById('select-all').addEventListener('click', () => {
-  const linkedin = rows.find((row) => row.dataset.channel === 'linkedin');
-  const checkbox = linkedin.querySelector('input');
-  checkbox.checked = !checkbox.checked;
-  linkedin.classList.toggle('selected', checkbox.checked);
+  const connectedRows = rows.filter((row) => row.dataset.connected === 'true');
+  const select = !connectedRows.some((row) => row.querySelector('input').checked);
+  for (const row of connectedRows) {
+    row.querySelector('input').checked = select;
+    row.classList.toggle('selected', select);
+  }
   updateSelected();
   saveDraft();
+});
+
+document.getElementById('welcome-action').addEventListener('click', (event) => {
+  if (event.currentTarget.dataset.action === 'compose') {
+    textarea.focus();
+    window.scrollTo({ top: document.getElementById('compose').offsetTop, behavior: 'smooth' });
+    return;
+  }
+  document.getElementById('channel-list').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const first = rows.find((row) => row.dataset.configured === 'true') || rows[0];
+  first.querySelector('.channel-status').click();
+});
+
+document.getElementById('add-channel').addEventListener('click', () => {
+  document.getElementById('channel-list').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const first = rows.find((row) => row.dataset.configured === 'true') || rows[0];
+  first.querySelector('.channel-status').click();
+});
+
+document.getElementById('help-button').addEventListener('click', () => {
+  openModal('Your first post, in three steps.', 'Connect a channel, write your message in English or አማርኛ, then review the live preview. Publish now or schedule in Addis Ababa time (EAT, UTC+3). Posts go only to the connected accounts you select.');
 });
 
 tabs.forEach((tab) => tab.addEventListener('click', () => {
@@ -686,7 +745,10 @@ loginForm.addEventListener('submit', async (event) => {
 
 document.getElementById('publish-button').addEventListener('click', async () => {
   const count = selectedRows().filter((row) => !platformOverrides[row.dataset.channel]?.skip).length;
-  if (!count) return showToast('Choose at least one channel first.');
+  if (!count) {
+    if (!rows.some((row) => row.dataset.connected === 'true')) return openModal('Connect a channel first.', 'Choose Connect beside a social channel, approve access, then come back to publish from ALL-POST.');
+    return showToast('Choose a connected channel first.');
+  }
   if (!textarea.value.trim()) return openModal('Start with a thought.', 'Write a few words and your preview will come to life.');
   const selected = selectedRows().map((row) => row.dataset.channel).filter((channel) => !platformOverrides[channel]?.skip);
   if (selected.some((channel) => ['instagram', 'tiktok', 'youtube'].includes(channel)) && !selectedMedia) {
@@ -807,7 +869,10 @@ document.getElementById('publish-button').addEventListener('click', async () => 
   }
 });
 document.getElementById('schedule-button').addEventListener('click', () => {
-  if (!composePayload().channels.length) return showToast('Choose at least one active channel first.');
+  if (!composePayload().channels.length) {
+    if (!rows.some((row) => row.dataset.connected === 'true')) return openModal('Connect a channel first.', 'Choose Connect beside a social channel before scheduling your post.');
+    return showToast('Choose a connected channel first.');
+  }
   if (!textarea.value.trim()) return openModal('Start with a thought.', 'Write a few words before scheduling your post.');
   openScheduleModal();
 });
@@ -971,7 +1036,7 @@ document.getElementById('calendar-compose').addEventListener('click', () => {
   document.getElementById('schedule-at').value = toZonedDateTimeValue(date);
 });
 for (const id of ['queue-compose', 'draft-compose']) document.getElementById(id).addEventListener('click', () => {
-  if (id === 'draft-compose') { activeDraftId = null; textarea.value = ''; selectedMedia = null; document.getElementById('media-upload-status').hidden = true; document.getElementById('youtube-title').value = ''; document.getElementById('youtube-privacy').value = ''; document.getElementById('tiktok-privacy').value = ''; document.getElementById('tiktok-consent').checked = false; Object.keys(platformOverrides).forEach((key) => delete platformOverrides[key]); rows.forEach((row) => { const checked = row.dataset.channel === 'linkedin'; row.querySelector('input').checked = checked; row.classList.toggle('selected', checked); }); updateSelected(); refreshPreview(); saveDraft(); }
+  if (id === 'draft-compose') { activeDraftId = null; textarea.value = ''; selectedMedia = null; document.getElementById('media-upload-status').hidden = true; document.getElementById('youtube-title').value = ''; document.getElementById('youtube-privacy').value = ''; document.getElementById('tiktok-privacy').value = ''; document.getElementById('tiktok-consent').checked = false; Object.keys(platformOverrides).forEach((key) => delete platformOverrides[key]); rows.forEach((row) => { row.querySelector('input').checked = false; row.classList.remove('selected'); }); updateSelected(); refreshPreview(); saveDraft(); }
   setWorkspacePage('compose'); textarea.focus();
 });
 document.getElementById('calendar-prev').addEventListener('click', () => { calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() - 1, 1); renderCalendar(); });
@@ -1058,6 +1123,8 @@ async function syncAccounts() {
         }
       }
     }
+    updateWelcome();
+    updateSelected();
     updateMediaOptions();
     await loadQueue();
   } catch {
