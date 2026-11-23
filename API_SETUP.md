@@ -1,6 +1,6 @@
 # ALL-POST production setup
 
-ALL-POST has server-side publishing flows for LinkedIn, X text/photo/video posts, Facebook Page text/JPEG posts, Instagram photo/Reel posts, TikTok photo/video posts, YouTube video uploads, Telegram messages/media, and signed webhooks. OAuth platforms still need their own developer app, credentials, account consent, and sometimes platform review. Do not paste secrets into chat or commit them.
+ALL-POST has server-side publishing flows for LinkedIn, X text/photo/video posts, Facebook Page text/photo/video posts, Instagram photo/Reel posts, TikTok photo/video posts, YouTube video uploads, Telegram messages/media, and signed webhooks. OAuth platforms still need their own developer app, credentials, account consent, and sometimes platform review. Do not paste secrets into chat or commit them.
 
 ## Current production foundation
 
@@ -49,7 +49,7 @@ Supported media: JPEG photo posts and MP4/MOV Reels. The caption uses the compos
 
 The Meta app ID (`2208962596689983`), app secret, Facebook callback, API version, and configuration ID must be present in Vercel Production. `META_APP_ID`, `FACEBOOK_REDIRECT_URI=https://all-post.vercel.app/api/oauth/facebook/callback`, `FACEBOOK_API_VERSION=v26.0`, and `FACEBOOK_CONFIG_ID=1405733188212054` are non-secret settings; store `META_APP_SECRET` as a Secret. The Facebook callback must also be registered in the Meta app. The configuration is named **ALL-POST Page Publishing** and requests a user access token with `pages_show_list`, `pages_read_engagement`, and `pages_manage_posts`. Enable Facebook Login for Business and register that exact callback URL. The signed-in profile must have content creation access to at least one Facebook Page. Personal profile publishing is not supported. Meta app review / Advanced Access may be required before other people or production users can connect Pages.
 
-After connecting, choose the Page in the composer. Text posts and single JPEG photo posts are supported; videos and multi-photo posts are not enabled yet. The Page access tokens are encrypted in private Blob storage.
+After connecting, choose the Page in the composer. Text posts, one JPEG photo, or one MP4 video are supported. The Page access tokens are encrypted in private Blob storage.
 
 Facebook Groups are not available for direct publishing: Meta removed the Groups API and its `publish_to_groups` permission across all Graph API versions in April 2024. ALL-POST supports a manual group-sharing workflow instead: save group links locally, then open a group and copy the current post so you can review and publish it yourself.
 

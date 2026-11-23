@@ -630,11 +630,11 @@ document.getElementById('publish-button').addEventListener('click', async () => 
   if (!textarea.value.trim()) return openModal('Start with a thought.', 'Write a few words and your preview will come to life.');
   const selected = selectedRows().map((row) => row.dataset.channel).filter((channel) => !platformOverrides[channel]?.skip);
   if (selected.some((channel) => ['instagram', 'tiktok', 'youtube'].includes(channel)) && !selectedMedia) {
-    openModal('Add photo or video.', 'Instagram, TikTok, and YouTube need an uploaded media file. Facebook and X can publish text only.');
+    openModal('Add photo or video.', 'Instagram, TikTok, and YouTube need media. Facebook, LinkedIn, and X can publish with or without media.');
     return;
   }
-  if (selected.includes('facebook') && selectedMedia && selectedMedia.contentType !== 'image/jpeg') {
-    openModal('Choose a JPEG for Facebook.', 'Facebook currently supports text posts or a single JPEG photo.');
+  if (selected.includes('facebook') && selectedMedia && !['image/jpeg', 'video/mp4'].includes(selectedMedia.contentType)) {
+    openModal('Choose Facebook-ready media.', 'Facebook Pages accept text, one JPEG photo, or one MP4 video.');
     return;
   }
   if (selected.includes('facebook') && document.getElementById('facebook-page').value === '' && (window.facebookPages || []).length > 1) {

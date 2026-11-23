@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { listPublishers, normalizePlatformError } from '../lib/platform-publisher.js';
+import { getPublisher, listPublishers, normalizePlatformError } from '../lib/platform-publisher.js';
 import { splitTelegramText } from '../lib/telegram.js';
 import { createWebhookSignature, verifyWebhookSignature, validateWebhookConfig } from '../lib/webhook-publisher.js';
 
@@ -20,6 +20,16 @@ test('platform errors retry 429 and 5xx but mark auth and permission errors perm
   assert.equal(normalizePlatformError(Object.assign(new Error('upstream error'), { status: 503 })).retryable, true);
   assert.equal(normalizePlatformError(Object.assign(new Error('unauthorized'), { status: 401 })).reconnectRequired, true);
   assert.equal(normalizePlatformError(Object.assign(new Error('denied'), { status: 403 })).code, 'permission_denied');
+});
+
+test('product media formats validate for Facebook, Instagram, X, and TikTok', () => {
+  const sample = { text: 'New product is here', mediaUrl: 'https://media.example/item', mediaType: 'video/mp4' };
+  for (const platform of ['facebook', 'instagram', 'x', 'tiktok']) {
+    const payload = platform === 'tiktok' ? { ...sample, tiktokPrivacy: 'PUBLIC_TO_EVERYONE' } : sample;
+    assert.doesNotThrow(() => getPublisher(platform).validatePost(payload), `${platform} should accept an MP4 product clip`);
+  }
+  assert.throws(() => getPublisher('facebook').validatePost({ ...sample, mediaType: 'video/webm' }), /Facebook accepts/);
+  assert.throws(() => getPublisher('instagram').validatePost({ text: sample.text }), /Instagram requires/);
 });
 
 test('Telegram text splits at the requested limit and preserves all content', () => {
