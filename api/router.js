@@ -37,6 +37,7 @@ import publishYouTube from '../routes/publish/youtube.js';
 import publishTelegram from '../routes/publish/telegram.js';
 import publishWebhook from '../routes/publish/webhook.js';
 import queue from '../routes/queue.js';
+import drafts from '../routes/drafts.js';
 import publishQueue from '../routes/cron/publish-queue.js';
 
 const handlers = new Map([
@@ -55,6 +56,7 @@ const handlers = new Map([
   ['auth/session', authSession],
   ['health', health],
   ['queue', queue],
+  ['drafts', drafts],
   ['cron/publish-queue', publishQueue],
   ['media/delete', mediaDelete],
   ['media/public', mediaPublic],

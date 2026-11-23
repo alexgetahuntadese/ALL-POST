@@ -6,6 +6,7 @@ import { instagramPublishingReady } from '../../lib/instagram.js';
 import { xPublishingReady } from '../../lib/x.js';
 import { tiktokPublishingReady } from '../../lib/tiktok.js';
 import { youtubePublishingReady } from '../../lib/youtube.js';
+import { recordImmediatePublication } from '../../lib/post-queue.js';
 
 const readiness = {
   linkedin: () => linkedinReady() && encryptionReady() && storageReady(),
@@ -30,6 +31,8 @@ export function createPublishHandler(platform) {
       if (platform === 'youtube' && (!payload.youtubeTitle || !['private', 'unlisted', 'public'].includes(payload.youtubePrivacy))) throw new Error('Add a YouTube title and choose visibility.');
       if (platform === 'tiktok' && (!payload.tiktokPrivacy || payload.tiktokConsent !== true)) throw new Error('Choose TikTok privacy and confirm the media upload.');
       const result = await publisher.publish({ id: crypto.randomUUID(), payload: { ...payload, overrides: { [platform]: { text: payload.text } } }, scheduledAt: null });
+      try { await recordImmediatePublication(platform, payload, result); }
+      catch (error) { console.error(`${platform} post history could not be recorded:`, error.message); }
       const postId = typeof result === 'string' ? result : result?.id || result?.postId || null;
       return response.status(201).json({ published: true, platform, postId, processing: platform === 'tiktok', partial: Boolean(result?.partial), status: result?.status, url: result?.url, results: result?.results || undefined, error: result?.error || undefined });
     } catch (error) {

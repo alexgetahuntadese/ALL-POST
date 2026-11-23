@@ -6,7 +6,7 @@ export default async function handler(request, response) {
   if (!requireSession(request, response)) return;
   if (request.method === 'GET') {
     try {
-      return response.status(200).json({ posts: await listScheduledPosts() });
+      return response.status(200).json({ posts: await listScheduledPosts(200) });
     } catch (error) {
       console.error('Queue lookup failed:', error.message);
       return response.status(503).json({ error: 'Could not load the scheduled posts.' });

@@ -19,9 +19,10 @@
         <div class="nav-label">WORKSPACE</div>
         <nav class="main-nav" aria-label="Main navigation">
           <a class="nav-item active" href="#compose"><span class="nav-icon">✳</span> Compose <span class="nav-shortcut">⌘ N</span></a>
-          <a class="nav-item" href="#queue"><span class="nav-icon">◷</span> Queue <span class="nav-count" id="queue-count">3</span></a>
+          <a class="nav-item" href="#queue-view"><span class="nav-icon">◷</span> Queue <span class="nav-count" id="queue-count">0</span></a>
           <a class="nav-item" href="#calendar"><span class="nav-icon">▦</span> Calendar</a>
           <a class="nav-item" href="#analytics"><span class="nav-icon">⌁</span> Analytics</a>
+          <a class="nav-item" href="#drafts"><span class="nav-icon">▤</span> Drafts</a>
         </nav>
         <div class="nav-label accounts-label">YOUR CHANNELS <button class="tiny-plus" aria-label="Add a channel">+</button></div>
         <div class="account-item" data-provider="facebook"><span class="social-dot facebook">f</span> Facebook <span class="account-state">setup</span></div>
@@ -53,7 +54,7 @@
                 <label class="channel-row" data-channel="facebook" data-live="true"><input type="checkbox" /><span class="channel-logo facebook">f</span><span class="channel-info"><strong>Facebook</strong><small>Page text or JPEG photo</small></span><span class="channel-status">Setup needed</span><span class="toggle"><i></i></span></label>
                 <label class="channel-row" data-channel="instagram" data-live="true"><input type="checkbox" /><span class="channel-logo instagram">◎</span><span class="channel-info"><strong>Instagram</strong><small>Photo or Reel</small></span><span class="channel-status">Setup needed</span><span class="toggle"><i></i></span></label>
                 <label class="channel-row selected" data-channel="linkedin" data-live="true"><input type="checkbox" checked /><span class="channel-logo linkedin">in</span><span class="channel-info"><strong>LinkedIn</strong><small>Text posts</small></span><span class="channel-status">Not connected</span><span class="toggle"><i></i></span></label>
-                <label class="channel-row" data-channel="x" data-live="true"><input type="checkbox" /><span class="channel-logo x-social">𝕏</span><span class="channel-info"><strong>X</strong><small>Text posts</small></span><span class="channel-status">Setup needed</span><span class="toggle"><i></i></span></label>
+                <label class="channel-row" data-channel="x" data-live="true"><input type="checkbox" /><span class="channel-logo x-social">𝕏</span><span class="channel-info"><strong>X</strong><small>Text, photos, or MP4 video</small></span><span class="channel-status">Setup needed</span><span class="toggle"><i></i></span></label>
                 <label class="channel-row" data-channel="youtube" data-live="true"><input type="checkbox" /><span class="channel-logo youtube">▶</span><span class="channel-info"><strong>YouTube</strong><small>Video upload</small></span><span class="channel-status">Setup needed</span><span class="toggle"><i></i></span></label>
                 <label class="channel-row" data-channel="tiktok" data-live="true"><input type="checkbox" /><span class="channel-logo tiktok">♪</span><span class="channel-info"><strong>TikTok</strong><small>Photo or video</small></span><span class="channel-status">Setup needed</span><span class="toggle"><i></i></span></label>
                 <label class="channel-row" data-channel="telegram" data-live="true"><input type="checkbox" /><span class="channel-logo telegram">➤</span><span class="channel-info"><strong>Telegram</strong><small>Text, photos, videos, groups</small></span><span class="channel-status">Setup needed</span><span class="toggle"><i></i></span></label>
@@ -89,6 +90,25 @@
           </div>
           <footer class="page-footer"><span>Small steps. Better reach.</span><span><a href="/privacy.html">Privacy</a> · MADE FOR THE WAY YOU POST <b>✳</b></span></footer>
         </div>
+        <section class="workspace-page" id="calendar-view" hidden>
+          <div class="page-heading compact-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> PLAN YOUR PRESENCE</div><h1>Your calendar.</h1><p class="heading-copy">See what’s scheduled and where each post is going.</p></div></div>
+          <div class="calendar-toolbar"><button class="schedule-button" id="calendar-prev" type="button" aria-label="Previous month">←</button><h2 id="calendar-month"></h2><button class="schedule-button" id="calendar-next" type="button" aria-label="Next month">→</button><button class="schedule-button today-action" id="calendar-today" type="button">Today</button><button class="publish-button" id="calendar-compose" type="button">Create post <span>↗</span></button></div>
+          <div class="calendar-grid" id="calendar-grid" role="grid" aria-label="Scheduled posts calendar"></div>
+          <div class="calendar-day-detail"><h3 id="calendar-day-title">Select a date</h3><div id="calendar-day-posts" class="scheduled-list"></div></div>
+        </section>
+        <section class="workspace-page" id="analytics-view" hidden>
+          <div class="page-heading compact-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> PUBLISHING PERFORMANCE</div><h1>Analytics.</h1><p class="heading-copy">Track delivery and publishing reliability across your channels.</p></div></div>
+          <div class="analytics-note">These are ALL-POST delivery metrics. Engagement metrics such as views, clicks, and reactions require additional platform insights permissions and are not included yet.</div>
+          <div class="analytics-cards" id="analytics-cards"></div><div class="analytics-panel"><h2>Delivery by channel</h2><div id="analytics-channels"></div></div>
+        </section>
+        <section class="workspace-page" id="queue-view" hidden>
+          <div class="page-heading compact-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> PUBLISHING PIPELINE</div><h1>Your queue.</h1><p class="heading-copy">Upcoming posts, retries, and recent publishing outcomes.</p></div><button class="publish-button" id="queue-compose" type="button">Create post <span>↗</span></button></div>
+          <div id="full-queue-list" class="full-queue-list"></div>
+        </section>
+        <section class="workspace-page" id="drafts-view" hidden>
+          <div class="page-heading compact-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> IDEAS IN PROGRESS</div><h1>Your drafts.</h1><p class="heading-copy">Saved drafts stay in your private workspace, ready to pick up again.</p></div><button class="publish-button" id="draft-compose" type="button">New draft <span>↗</span></button></div>
+          <div id="draft-list" class="draft-list"></div>
+        </section>
       </main>
     </div>
     <div class="toast" id="toast" role="status"></div>

@@ -1,6 +1,6 @@
 # ALL-POST
 
-ALL-POST is a single-owner social publishing workspace with protected Vercel API routes, signed sessions, OAuth state checks, and encrypted provider-token storage in private Vercel Blob.
+ALL-POST is a private, single-owner social publishing workspace with protected Vercel API routes, signed sessions, OAuth state checks, encrypted provider-token storage, a multi-platform queue, a calendar, delivery analytics, and persistent drafts.
 
 ## Run locally
 
@@ -22,12 +22,15 @@ Production URL: <https://all-post.vercel.app>. Vercel provides HTTPS without a c
 
 ## Current API coverage
 
-- LinkedIn and X: protected OAuth connections and text posts.
+- Facebook and LinkedIn: protected account connections and publishing.
+- X: protected OAuth 2.0 connection, text, photo, and MP4 video posts.
 - Instagram: protected OAuth connection and photo/Reel publishing.
 - TikTok: protected OAuth connection and photo/video publishing, with creator privacy/interactions, consent, status polling, and a verified custom media domain requirement.
 - YouTube: protected OAuth connection and video uploads with title and privacy settings.
+- Telegram: Bot API messages, photos, videos, media groups, and multiple destinations.
+- Signed HTTPS webhooks: structured delivery with HMAC authentication and idempotency keys.
 - Scheduled posts use a private Blob-backed queue. GitHub Actions checks after each push to `main` and about every five minutes. GitHub may delay scheduled runs under load.
-- The workspace remains single-owner. Multi-user sign-in, teams, and cross-user workspaces are not included.
+- The workspace remains single-owner. Multi-user sign-in, teams, billing, and cross-user workspaces are not included. Analytics currently reports delivery outcomes, not audience engagement.
 
 See [API_SETUP.md](API_SETUP.md) for the platform-by-platform access, credential, and approval checklist.
 

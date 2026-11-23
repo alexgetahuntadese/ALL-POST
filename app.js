@@ -19,6 +19,10 @@ let selectedMedia = null;
 let mediaStorageConfigured = false;
 let scheduleMode = false;
 let lastQueuePosts = [];
+let savedDrafts = [];
+let activeDraftId = null;
+let calendarCursor = new Date();
+let selectedCalendarDate = null;
 const platformOverrides = {};
 const facebookGroupsKey = 'allpost-facebook-groups';
 
@@ -101,6 +105,7 @@ function composePayload() {
 
 function renderQueue(posts) {
   lastQueuePosts = posts;
+  document.getElementById('queue-count').textContent = String(posts.filter((post) => ['scheduled', 'retrying', 'processing'].includes(post.status)).length);
   const list = document.getElementById('scheduled-list');
   const fallback = document.getElementById('queue-fallback');
   list.replaceChildren();
@@ -157,6 +162,132 @@ function renderQueue(posts) {
     row.append(date, info, actions);
     list.append(row);
   }
+  const full = document.getElementById('full-queue-list');
+  if (full) {
+    full.replaceChildren();
+    if (!posts.length) {
+      const empty = document.createElement('div'); empty.className = 'queue-empty'; empty.textContent = 'Your queue is clear. Schedule a post to see it here.'; full.append(empty);
+    } else {
+      for (const post of [...posts].sort((a, b) => Date.parse(b.scheduledAt || b.createdAt) - Date.parse(a.scheduledAt || a.createdAt))) {
+        const row = document.createElement('div'); row.className = 'queue-post full-queue-item';
+        const title = document.createElement('strong'); title.textContent = post.text || 'Scheduled post';
+        const detail = document.createElement('small'); detail.textContent = `${post.status} · ${new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(post.scheduledAt || post.createdAt))}`;
+        const content = document.createElement('div'); content.className = 'queue-post-info'; content.append(title, detail);
+        const badges = document.createElement('div'); badges.className = 'queue-actions';
+        for (const channel of post.channels || []) { const result = (post.results || []).find((item) => item.channel === channel); const badge = document.createElement('i'); badge.className = channel; badge.textContent = `${channel} · ${result?.status || 'pending'}`; badge.title = result?.error || ''; badges.append(badge); }
+        if (post.status === 'scheduled') { const cancel = document.createElement('button'); cancel.className = 'queue-cancel'; cancel.type = 'button'; cancel.dataset.cancelQueueId = post.id; cancel.textContent = 'Cancel'; badges.append(cancel); }
+        row.append(content, badges); full.append(row);
+      }
+    }
+  }
+  renderCalendar();
+  renderAnalytics(posts);
+}
+
+function dayKey(date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; }
+
+function renderCalendar() {
+  const grid = document.getElementById('calendar-grid');
+  if (!grid) return;
+  const year = calendarCursor.getFullYear(); const month = calendarCursor.getMonth();
+  document.getElementById('calendar-month').textContent = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(calendarCursor);
+  grid.replaceChildren();
+  for (const label of ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']) { const head = document.createElement('div'); head.className = 'calendar-weekday'; head.textContent = label; grid.append(head); }
+  const first = new Date(year, month, 1);
+  const start = (first.getDay() + 6) % 7;
+  const days = new Date(year, month + 1, 0).getDate();
+  for (let index = 0; index < 42; index += 1) {
+    const date = new Date(year, month, index - start + 1);
+    const cell = document.createElement('button'); cell.type = 'button'; cell.className = 'calendar-cell'; cell.dataset.calendarDay = dayKey(date);
+    if (date.getMonth() !== month) cell.classList.add('outside-month');
+    if (dayKey(date) === dayKey(new Date())) cell.classList.add('is-today');
+    const number = document.createElement('span'); number.className = 'calendar-number'; number.textContent = String(date.getDate()); cell.append(number);
+    const matches = lastQueuePosts.filter((post) => dayKey(new Date(post.scheduledAt || post.createdAt)) === dayKey(date));
+    if (matches.length) { const marker = document.createElement('span'); marker.className = 'calendar-event-count'; marker.textContent = `${matches.length} ${matches.length === 1 ? 'post' : 'posts'}`; cell.append(marker); }
+    cell.addEventListener('click', () => selectCalendarDay(date)); grid.append(cell);
+  }
+  selectCalendarDay(new Date(year, month, Math.min(new Date().getDate(), days)));
+}
+
+function selectCalendarDay(date) {
+  selectedCalendarDate = date;
+  const key = dayKey(date);
+  document.querySelectorAll('.calendar-cell').forEach((cell) => cell.classList.toggle('selected', cell.dataset.calendarDay === key));
+  document.getElementById('calendar-day-title').textContent = new Intl.DateTimeFormat(undefined, { dateStyle: 'full' }).format(date);
+  const root = document.getElementById('calendar-day-posts'); root.replaceChildren();
+  const matches = lastQueuePosts.filter((post) => dayKey(new Date(post.scheduledAt || post.createdAt)) === key);
+  if (!matches.length) { const empty = document.createElement('div'); empty.className = 'queue-empty'; empty.textContent = 'Nothing scheduled for this day.'; root.append(empty); return; }
+  for (const post of matches) { const row = document.createElement('div'); row.className = 'queue-post'; const info = document.createElement('div'); info.className = 'queue-post-info'; const title = document.createElement('strong'); title.textContent = post.text || 'Scheduled post'; const detail = document.createElement('small'); detail.textContent = `${post.status} · ${new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(new Date(post.scheduledAt || post.createdAt))} · ${(post.channels || []).join(', ')}`; info.append(title, detail); row.append(info); root.append(row); }
+}
+
+function renderAnalytics(posts) {
+  const results = posts.flatMap((post) => post.results || []);
+  const published = results.filter((result) => result.status === 'published').length;
+  const attempts = results.filter((result) => ['published', 'partial', 'failed'].includes(result.status)).length;
+  const values = [
+    ['Posts delivered', String(published), 'Across all connected channels'],
+    ['Delivery success', `${attempts ? Math.round(published / attempts * 100) : 0}%`, `${published} published of ${attempts} completed channel attempts`],
+    ['Needs attention', String(results.filter((result) => ['failed', 'retrying', 'partial'].includes(result.status)).length), 'Failed, partial, or retrying channels'],
+    ['Scheduled', String(posts.filter((post) => ['scheduled', 'processing', 'retrying'].includes(post.status)).length), 'Posts still in the queue'],
+  ];
+  const cards = document.getElementById('analytics-cards'); cards.replaceChildren();
+  for (const [label, value, note] of values) { const card = document.createElement('article'); card.className = 'analytics-card'; const heading = document.createElement('small'); heading.textContent = label; const metric = document.createElement('strong'); metric.textContent = value; const caption = document.createElement('span'); caption.textContent = note; card.append(heading, metric, caption); cards.append(card); }
+  const counts = new Map();
+  for (const result of results) { const item = counts.get(result.channel) || { published: 0, failed: 0, pending: 0 }; if (result.status === 'published') item.published += 1; else if (['failed', 'partial'].includes(result.status)) item.failed += 1; else item.pending += 1; counts.set(result.channel, item); }
+  const channelRoot = document.getElementById('analytics-channels'); channelRoot.replaceChildren();
+  if (!counts.size) { const empty = document.createElement('p'); empty.className = 'queue-empty'; empty.textContent = 'Publish or schedule a post to start building delivery history.'; channelRoot.append(empty); }
+  for (const [channel, count] of counts) { const row = document.createElement('div'); row.className = 'analytics-channel'; const name = document.createElement('strong'); name.textContent = channel; const meter = document.createElement('span'); meter.className = 'analytics-meter'; const fill = document.createElement('i'); const total = count.published + count.failed + count.pending; fill.style.width = `${total ? Math.round(count.published / total * 100) : 0}%`; meter.append(fill); const detail = document.createElement('small'); detail.textContent = `${count.published} published · ${count.failed} needs attention · ${count.pending} pending`; row.append(name, meter, detail); channelRoot.append(row); }
+}
+
+function renderDrafts() {
+  const root = document.getElementById('draft-list'); root.replaceChildren();
+  if (!savedDrafts.length) { const empty = document.createElement('div'); empty.className = 'queue-empty'; empty.textContent = 'No saved drafts yet. Write an idea and choose Save draft.'; root.append(empty); return; }
+  for (const draft of savedDrafts) {
+    const card = document.createElement('article'); card.className = 'draft-card';
+    const title = document.createElement('strong'); title.textContent = draft.title || 'Untitled draft';
+    const excerpt = document.createElement('p'); excerpt.textContent = draft.payload?.text || 'No text yet';
+    const date = document.createElement('small'); date.textContent = `Saved ${new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(draft.updatedAt))}`;
+    const actions = document.createElement('div'); actions.className = 'draft-actions';
+    const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'schedule-button'; edit.textContent = 'Open draft'; edit.addEventListener('click', () => restoreWorkspaceDraft(draft));
+    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'queue-cancel'; remove.textContent = 'Delete'; remove.addEventListener('click', async () => { try { const response = await fetch('/api/drafts', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: draft.id }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Could not delete draft.'); savedDrafts = savedDrafts.filter((item) => item.id !== draft.id); renderDrafts(); showToast('Draft deleted.'); } catch (error) { showToast(error.message); } });
+    actions.append(edit, remove); card.append(title, excerpt, date, actions); root.append(card);
+  }
+}
+
+function restoreWorkspaceDraft(draft) {
+  const payload = draft.payload || {}; activeDraftId = draft.id;
+  textarea.value = payload.text || '';
+  Object.keys(platformOverrides).forEach((key) => delete platformOverrides[key]);
+  if (payload.overrides) Object.assign(platformOverrides, payload.overrides);
+  rows.forEach((row) => { const checked = (payload.channels || []).includes(row.dataset.channel); row.querySelector('input').checked = checked; row.classList.toggle('selected', checked); });
+  if (payload.mediaUrl) {
+    const blobUrl = new URL(payload.mediaUrl, window.location.origin).searchParams.get('url');
+    selectedMedia = { url: payload.mediaUrl, blobUrl, contentType: payload.mediaType || '', name: payload.mediaName || 'Saved media' };
+    document.getElementById('media-upload-status').hidden = false; document.getElementById('media-upload-message').textContent = `${selectedMedia.name} is attached to this draft.`;
+  } else { selectedMedia = null; document.getElementById('media-upload-status').hidden = true; }
+  document.getElementById('youtube-title').value = payload.youtubeTitle || '';
+  document.getElementById('youtube-privacy').value = payload.youtubePrivacy || '';
+  document.getElementById('tiktok-privacy').value = payload.tiktokPrivacy || '';
+  document.getElementById('facebook-page').value = payload.facebookPageId || '';
+  localStorage.setItem('allpost-draft', JSON.stringify({ id: activeDraftId, text: textarea.value, channels: payload.channels || [], overrides: platformOverrides }));
+  document.getElementById('draft-state').textContent = 'Saved to workspace';
+  updateSelected(); refreshPreview(); setWorkspacePage('compose'); showToast('Draft opened.');
+}
+
+async function loadSavedDrafts() {
+  const root = document.getElementById('draft-list');
+  try { const response = await fetch('/api/drafts', { cache: 'no-store' }); if (!response.ok) throw new Error('Drafts unavailable.'); const data = await response.json(); savedDrafts = data.drafts || []; renderDrafts(); }
+  catch { root.textContent = 'Could not load saved drafts. Check private storage configuration.'; }
+}
+
+function setWorkspacePage(page) {
+  const pages = { compose: 'compose', calendar: 'calendar-view', analytics: 'analytics-view', queue: 'queue-view', drafts: 'drafts-view' };
+  for (const [name, id] of Object.entries(pages)) document.getElementById(id).hidden = name !== page;
+  document.querySelectorAll('.main-nav .nav-item').forEach((item) => item.classList.toggle('active', item.getAttribute('href') === `#${page === 'queue' ? 'queue-view' : page}`));
+  const title = { compose: 'Compose', calendar: 'Calendar', analytics: 'Analytics', queue: 'Queue', drafts: 'Drafts' }[page];
+  document.querySelector('.breadcrumbs strong').textContent = title;
+  if (page === 'drafts') loadSavedDrafts();
+  if (page === 'calendar') renderCalendar();
 }
 
 async function loadQueue() {
@@ -371,6 +502,7 @@ document.getElementById('webhook-save').addEventListener('click', async () => {
 
 function saveDraft(showConfirmation = false) {
   const draft = {
+    id: activeDraftId,
     text: textarea.value,
     channels: rows.filter((row) => row.querySelector('input').checked).map((row) => row.dataset.channel),
     overrides: platformOverrides,
@@ -459,7 +591,17 @@ tabs.forEach((tab) => tab.addEventListener('click', () => {
   refreshPreview();
 }));
 
-document.getElementById('save-draft').addEventListener('click', () => saveDraft(true));
+document.getElementById('save-draft').addEventListener('click', async () => {
+  const button = document.getElementById('save-draft'); button.disabled = true;
+  try {
+    const payload = { ...composePayload(), channels: selectedRows().map((row) => row.dataset.channel) };
+    const response = await fetch('/api/drafts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: activeDraftId, payload }) });
+    const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Could not save this draft.');
+    activeDraftId = data.draft.id; savedDrafts = [data.draft, ...savedDrafts.filter((item) => item.id !== data.draft.id)];
+    saveDraft(); draftState.textContent = 'Saved to workspace'; showToast('Draft saved to your workspace.');
+  } catch (error) { openModal('Draft was saved on this device only.', error.message); }
+  finally { button.disabled = false; }
+});
 loginForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const submit = document.getElementById('login-submit');
@@ -595,6 +737,7 @@ document.getElementById('publish-button').addEventListener('click', async () => 
       else if (pending.length) openModal(`Sent to ${posted.join(' and ')}.`, `${pending.join(' and ')} is still processing the media. Check the account before retrying.`);
       else openModal(`Posted to ${posted.join(' and ')}.`, 'Your post was published.');
     }
+    await loadQueue();
   } catch (error) {
     openModal('Could not publish.', error.message);
   } finally {
@@ -754,10 +897,32 @@ document.querySelector('.hashtag-tool').addEventListener('click', () => {
 document.querySelector('.tiny-plus').addEventListener('click', () => {
   openModal('More channels are on the roadmap.', 'ALL-POST is starting with Instagram, LinkedIn, X, YouTube, and TikTok.');
 });
-document.querySelectorAll('.nav-item:not(.active):not([href="#queue"])').forEach((item) => item.addEventListener('click', (event) => {
+document.querySelectorAll('.main-nav .nav-item').forEach((item) => item.addEventListener('click', (event) => {
   event.preventDefault();
-  showToast(`${item.textContent.trim()} is coming soon.`);
+  const page = ({ '#compose': 'compose', '#calendar': 'calendar', '#analytics': 'analytics', '#queue-view': 'queue', '#drafts': 'drafts' })[item.getAttribute('href')];
+  if (page) setWorkspacePage(page);
 }));
+document.getElementById('calendar-compose').addEventListener('click', () => {
+  setWorkspacePage('compose');
+  if (!selectedCalendarDate) return;
+  openScheduleModal();
+  const date = new Date(selectedCalendarDate.getFullYear(), selectedCalendarDate.getMonth(), selectedCalendarDate.getDate(), 9, 0, 0);
+  if (date.getTime() < Date.now() + 2 * 60_000) date.setTime(Date.now() + 20 * 60_000);
+  document.getElementById('schedule-at').value = toLocalDateTimeValue(date);
+});
+for (const id of ['queue-compose', 'draft-compose']) document.getElementById(id).addEventListener('click', () => {
+  if (id === 'draft-compose') { activeDraftId = null; textarea.value = ''; selectedMedia = null; document.getElementById('media-upload-status').hidden = true; document.getElementById('youtube-title').value = ''; document.getElementById('youtube-privacy').value = ''; document.getElementById('tiktok-privacy').value = ''; document.getElementById('tiktok-consent').checked = false; Object.keys(platformOverrides).forEach((key) => delete platformOverrides[key]); rows.forEach((row) => { const checked = row.dataset.channel === 'linkedin'; row.querySelector('input').checked = checked; row.classList.toggle('selected', checked); }); updateSelected(); refreshPreview(); saveDraft(); }
+  setWorkspacePage('compose'); textarea.focus();
+});
+document.getElementById('calendar-prev').addEventListener('click', () => { calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() - 1, 1); renderCalendar(); });
+document.getElementById('calendar-next').addEventListener('click', () => { calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + 1, 1); renderCalendar(); });
+document.getElementById('calendar-today').addEventListener('click', () => { calendarCursor = new Date(); renderCalendar(); });
+document.getElementById('full-queue-list').addEventListener('click', async (event) => {
+  const button = event.target.closest('[data-cancel-queue-id]'); if (!button) return;
+  button.disabled = true;
+  try { const response = await fetch('/api/queue', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: button.dataset.cancelQueueId }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Could not cancel post.'); await loadQueue(); showToast('Scheduled post cancelled.'); }
+  catch (error) { showToast(error.message); button.disabled = false; }
+});
 
 const storedDraft = localStorage.getItem('allpost-draft');
 let saved = null;
@@ -769,6 +934,7 @@ if (storedDraft) {
   }
 }
 if (saved) {
+  activeDraftId = typeof saved === 'object' ? saved.id || null : null;
   textarea.value = typeof saved === 'string' ? saved : saved.text || '';
   if (saved.overrides && typeof saved.overrides === 'object') Object.assign(platformOverrides, saved.overrides);
   if (saved.channels) rows.forEach((row) => {
