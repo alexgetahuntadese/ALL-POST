@@ -12,7 +12,8 @@
     "node": ">=20.12"
   },
   "dependencies": {
-    "@vercel/blob": "^2.9.0"
+    "@vercel/blob": "^2.9.0",
+    "twitter-text": "^3.1.0"
   },
   "overrides": {
     "@vercel/cli-config": "0.3.8"

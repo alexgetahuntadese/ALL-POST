@@ -8,7 +8,7 @@
     <title>ALL-POST — Social publishing</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+Ethiopic:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
   </head>
       <body class="auth-pending">
@@ -47,13 +47,14 @@
           </section>
           <div class="composer-layout">
             <section class="compose-column">
-              <div class="ethiopia-note"><span aria-hidden="true">🇪🇹</span><span><strong>Made for your time.</strong> Scheduling uses Addis Ababa time (EAT, UTC+3). Write in English or አማርኛ.</span></div>
+              <div class="ethiopia-note"><span aria-hidden="true">🇪🇹</span><span><strong>Made for your time.</strong> Scheduling uses Addis Ababa time (EAT, UTC+3). Write in English, አማርኛ, Afaan Oromo, Soomaali, or Tigrinya. Some interface controls can be switched to Amharic.</span></div>
               <div class="section-title"><div class="step-number">01</div><div><h2>Your post</h2><p>Start with one idea. Make it yours.</p></div><button class="save-draft" id="save-draft">↗ <span>Save draft</span></button></div>
               <div class="composer-card">
                 <div class="composer-toolbar"><span class="toolbar-label">WRITE SOMETHING GOOD</span><span class="draft-state" id="draft-state">Saved on this device</span></div>
-                <textarea id="post-text" maxlength="500" placeholder="What’s on your mind? Share a thought, a win, or something worth passing on…"></textarea>
+                <textarea id="post-text" maxlength="10000" placeholder="What’s on your mind? Share a thought, a win, or something worth passing on…"></textarea>
                 <div class="media-upload-status" id="media-upload-status" hidden><span id="media-upload-message"></span><button type="button" id="remove-media">Remove</button></div>
-                <div class="composer-tools"><div class="tool-group"><button class="icon-tool" id="image-button" aria-label="Add photo or video" title="Photo or video">▧</button><input id="image-input" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" hidden /><button class="icon-tool" id="link-button" aria-label="Add link" title="Link">⌁</button><button class="icon-tool" id="emoji-button" aria-label="Add emoji" title="Emoji">☺</button><span class="tool-divider"></span><button class="hashtag-tool"># Add a tag</button><div class="emoji-picker" id="emoji-picker" hidden><button type="button">✨</button><button type="button">🎉</button><button type="button">💡</button><button type="button">🙌</button><button type="button">❤️</button><button type="button">🌱</button></div></div><span class="char-count"><b id="char-count">0</b> / 500</span></div>
+                <div class="composer-tools"><div class="tool-group"><button class="icon-tool" id="image-button" aria-label="Add photo or video" title="Photo or video">▧</button><input id="image-input" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" hidden /><button class="icon-tool" id="link-button" aria-label="Add link" title="Link">⌁</button><button class="icon-tool" id="emoji-button" aria-label="Add emoji" title="Emoji">☺</button><span class="tool-divider"></span><button class="hashtag-tool"># Add a tag</button><div class="emoji-picker" id="emoji-picker" hidden><button type="button">✨</button><button type="button">🎉</button><button type="button">💡</button><button type="button">🙌</button><button type="button">❤️</button><button type="button">🌱</button></div></div><span class="char-count"><b id="char-count">0</b><span id="char-limit"> / 10,000</span></span></div>
+                <label class="data-saver-option"><input type="checkbox" id="image-optimize" checked /> Optimize photos to save mobile data <span>Images are resized to 2,048 px and compressed as JPEG; transparent backgrounds become white. Videos upload unchanged, up to 250 MB—compress large videos before uploading on mobile data.</span></label>
               </div>
               <div class="section-title channels-heading"><div class="step-number">02</div><div><h2>Pick your places</h2><p>Choose connected accounts. We’ll help adapt each post to its platform.</p></div><button class="select-all" id="select-all">Connect accounts first</button></div>
               <div class="channel-list" id="channel-list">
@@ -78,7 +79,7 @@
                   <div class="facebook-groups-list" id="facebook-groups-list" aria-live="polite"></div>
                 </div>
                 <div class="media-option" id="tiktok-privacy-group" hidden>
-                  <p class="tiktok-note">Review these sharing settings. ALL-POST will upload the selected media to TikTok only after you agree below.</p>
+                  <p class="tiktok-note">Review these sharing settings. ALL-POST will upload the selected media to TikTok only after you agree below. TikTok may restrict posts to private visibility until this app passes its Direct Post audit.</p>
                   <label for="tiktok-privacy">TikTok visibility</label><select id="tiktok-privacy"><option value="">Choose a TikTok privacy level</option></select>
                   <label class="consent-option"><input id="tiktok-comments" type="checkbox" /> Allow comments</label>
                   <label class="consent-option"><input id="tiktok-duet" type="checkbox" /> Allow Duet</label>
@@ -131,6 +132,6 @@
         <button class="publish-button" id="login-submit" type="submit">Sign in <span>→</span></button>
       </form>
     </div>
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
   </body>
 </html>

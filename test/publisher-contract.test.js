@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getPublisher, listPublishers, normalizePlatformError } from '../lib/platform-publisher.js';
+import { getPublisher, listPublishers, normalizePlatformError, resolvePlatformText } from '../lib/platform-publisher.js';
 import { splitTelegramText } from '../lib/telegram.js';
 import { createWebhookSignature, verifyWebhookSignature, validateWebhookConfig } from '../lib/webhook-publisher.js';
 import { sortJobsByCreatedAt } from '../lib/post-queue.js';
@@ -49,8 +49,21 @@ test('all platform adapters accept their minimum post payload without network ca
   for (const [platform, payload] of Object.entries(payloads)) {
     assert.doesNotThrow(() => getPublisher(platform).validatePost(payload), `${platform} should accept its minimum valid post`);
   }
-  assert.throws(() => getPublisher('x').validatePost({ text: 'x'.repeat(281) }), /280 characters/);
+  assert.throws(() => getPublisher('x').validatePost({ text: 'x'.repeat(281) }), /weighted-character limit/);
   assert.doesNotThrow(() => getPublisher('linkedin').validatePost({ text: 'Master copy', overrides: { linkedin: { text: 'ልዩ ጽሑፍ' } } }));
+});
+
+test('immediate publishing preserves per-platform copy and falls back to the master post', () => {
+  const payload = { text: 'Master copy', overrides: { instagram: { text: 'አማርኛ ጽሑፍ' } } };
+  assert.equal(resolvePlatformText(payload, 'instagram'), 'አማርኛ ጽሑፍ');
+  assert.equal(resolvePlatformText(payload, 'facebook'), 'Master copy');
+  assert.doesNotThrow(() => getPublisher('instagram').validatePost({ ...payload, mediaUrl: 'https://media.example/photo.jpg', mediaType: 'image/jpeg' }));
+});
+
+test('X post validation uses weighted Unicode and link length rules', () => {
+  assert.doesNotThrow(() => getPublisher('x').validatePost({ text: 'ሰላም https://example.com' }));
+  assert.throws(() => getPublisher('x').validatePost({ text: 'ሰ'.repeat(141) }), /weighted-character limit/);
+  assert.throws(() => getPublisher('x').validatePost({ text: `${'a'.repeat(258)} https://example.com` }), /weighted-character limit/);
 });
 
 test('queue history sorts ISO timestamps newest first', () => {

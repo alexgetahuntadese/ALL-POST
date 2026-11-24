@@ -13,9 +13,13 @@ for (const file of ['index.html', 'styles.css', 'privacy.html']) {
 }
 await build({
   entryPoints: [resolve(root, 'app.js')],
-  outfile: resolve(output, 'app.js'),
+  outdir: output,
+  entryNames: 'app',
+  chunkNames: 'chunk-[hash]',
   bundle: true,
   platform: 'browser',
+  format: 'esm',
+  splitting: true,
   target: ['es2020'],
   minify: true,
   legalComments: 'none',

@@ -8,7 +8,7 @@ ALL-POST has server-side publishing flows for LinkedIn, X text/photo/video posts
 - Privacy policy: [all-post.vercel.app/privacy.html](https://all-post.vercel.app/privacy.html)
 - LinkedIn Production credentials and workspace access are already configured in Vercel.
 - The private Blob store is used for encrypted provider tokens. A separate public Blob store exists for media, but it must be connected to the project with the `MEDIA` environment-variable prefix before uploads are enabled.
-- The media upload UI supports JPG, PNG, WebP, MP4, MOV, and WebM files up to 250 MB. Public media URLs can be opened by anyone who has the link and remain in storage until you remove them.
+- The media upload UI supports JPG, PNG, WebP, MP4, MOV, and WebM files up to 250 MB. Photo optimization is enabled by default for mobile data savings (2,048 px maximum edge, JPEG quality compression, white background for transparent images); videos are never modified. Public media URLs can be opened by anyone who has the link and remain in storage until you remove them.
 
 ## OAuth callback URLs
 
@@ -59,7 +59,7 @@ Add `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, and `TIKTOK_REDIRECT_URI=https:
 
 TikTok requires media URLs to use a domain or URL prefix verified in the TikTok developer app. Vercel Blob’s own hostname is not your domain, so connect your purchased domain to this Vercel project, set `APP_BASE_URL` to that HTTPS origin, register the new TikTok callback, verify that domain or URL prefix in TikTok, and set `TIKTOK_VERIFIED_DOMAIN` to the hostname only (for example, `social.example.com`). The value must match the browser’s public hostname. ALL-POST will not send media to TikTok if the host does not match.
 
-The composer queries the connected creator’s current privacy options and account interaction settings. You choose visibility and whether to allow comments, Duet, and Stitch; these are off by default. ALL-POST also asks for consent before sending media. Unreviewed TikTok apps may only publish privately until TikTok completes its audit. The app checks the post status while you wait.
+The composer queries the connected creator’s current privacy options and account interaction settings. You choose visibility and whether to allow comments, Duet, and Stitch; these are off by default. ALL-POST also asks for consent before sending media and warns in the composer that TikTok may restrict unaudited apps to private visibility. Public creator posting requires TikTok's Direct Post audit. The app checks the post status while you wait.
 
 ## YouTube
 

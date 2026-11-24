@@ -1,5 +1,5 @@
 import { requireSameOrigin, requireSession } from '../../lib/security.js';
-import { getPublisher } from '../../lib/platform-publisher.js';
+import { getPublisher, resolvePlatformText } from '../../lib/platform-publisher.js';
 import { credentialsReady as linkedinReady, encryptionReady, storageReady } from '../../lib/linkedin.js';
 import { facebookPublishingReady } from '../../lib/facebook.js';
 import { instagramPublishingReady } from '../../lib/instagram.js';
@@ -26,9 +26,10 @@ export function createPublishHandler(platform) {
     if (!readiness[platform]()) return response.status(503).json({ error: `${platform} publishing is not configured yet.` });
     const publisher = getPublisher(platform);
     const payload = { ...(request.body || {}), text: String(request.body?.text || '').trim() };
+    const selectedCopy = resolvePlatformText(payload, platform);
     payload.overrides = {
       ...(payload.overrides || {}),
-      [platform]: { ...(payload.overrides?.[platform] || {}), text: payload.text },
+      [platform]: { ...(payload.overrides?.[platform] || {}), text: selectedCopy || payload.text },
     };
     try {
       publisher.validatePost(payload);

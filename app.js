@@ -27,6 +27,17 @@ const platformOverrides = {};
 const facebookGroupsKey = 'allpost-facebook-groups';
 const ETHIOPIA_TIME_ZONE = 'Africa/Addis_Ababa';
 let interfaceLanguage = localStorage.getItem('allpost-language') === 'am' ? 'am' : 'en';
+let twitterText;
+let twitterTextLoading;
+
+function loadXTextParser() {
+  if (!twitterTextLoading) twitterTextLoading = import('twitter-text').then((module) => { twitterText = module.default; return twitterText; });
+  return twitterTextLoading;
+}
+
+function xTextStats(value) {
+  return twitterText?.parseTweet(value) || { weightedLength: [...value].length, valid: [...value].length > 0 && [...value].length <= 280 };
+}
 
 function zonedParts(date, timeZone = ETHIOPIA_TIME_ZONE) {
   return Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
@@ -74,6 +85,27 @@ const translations = {
   'Write something good': 'ጥሩ ነገር ይጻፉ',
   'Live preview': 'ቅድመ እይታ', 'A little momentum': 'ቀጣይ እርምጃ', 'Nothing scheduled for this day.': 'ለዚህ ቀን ምንም አልተያዘም።',
   'Start with a thought.': 'በሀሳብ ይጀምሩ።', 'Choose a date and time.': 'ቀንና ሰዓት ይምረጡ።', 'Got it': 'ገባኝ', 'Add to queue': 'ወደ ዝርዝር ጨምር',
+  'WORKSPACE': 'የሥራ ቦታ', 'YOUR CHANNELS': 'ቻናሎችዎ',
+  'WRITE SOMETHING GOOD': 'ጥሩ ነገር ይጻፉ', 'Saved on this device': 'በዚህ መሣሪያ ተቀምጧል',
+  'Choose connected accounts. We’ll help adapt each post to its platform.': 'የተገናኙ መለያዎችን ይምረጡ። ለእያንዳንዱ መድረክ ጽሑፉን እናስተካክላለን።',
+  'Connect accounts first': 'መጀመሪያ መለያዎችን ያገናኙ', 'Platform copy and media': 'የመድረክ ጽሑፍና ሚዲያ',
+  'Set a different caption per network or skip that platform for this post.': 'ለእያንዳንዱ መድረክ የተለየ ጽሑፍ ይጻፉ ወይም ይህን ጽሑፍ ይዝለሉ።',
+  'Analytics.': 'ትንታኔ።', 'Your calendar.': 'የእርስዎ የጊዜ ሰሌዳ።', 'Your queue.': 'የሚጠብቁት።', 'Your drafts.': 'ረቂቆችዎ።',
+  'See what’s scheduled and where each post is going.': 'የታቀዱትን ጽሑፎችና የሚሄዱበትን መድረክ ይመልከቱ።',
+  'Upcoming posts, retries, and recent publishing outcomes.': 'የሚቀጥሉ ጽሑፎችን፣ ድጋሚ ሙከራዎችንና የቅርብ የማጋራት ውጤቶችን ይመልከቱ።',
+  'Saved drafts stay in your private workspace, ready to pick up again.': 'የተቀመጡ ረቂቆች በግል የሥራ ቦታዎ ውስጥ ይቆያሉ።',
+  'Create post': 'ጽሑፍ ይፍጠሩ', 'Add photo or video': 'ፎቶ ወይም ቪዲዮ ያክሉ', 'Add link': 'ሊንክ ያክሉ',
+  'Interface language': 'የበይነገጽ ቋንቋ',
+  'Scheduling uses Addis Ababa time (EAT, UTC+3). Write in English, አማርኛ, Afaan Oromo, Soomaali, or Tigrinya. Some interface controls can be switched to Amharic.': 'የጊዜ ሰሌዳው የአዲስ አበባን ሰዓት (EAT, UTC+3) ይጠቀማል። በእንግሊዝኛ፣ በአማርኛ፣ በኦሮምኛ፣ በሶማሊኛ ወይም በትግርኛ ይጻፉ። አንዳንድ የመተግበሪያ ቁጥጥሮችን ወደ አማርኛ መቀየር ይችላሉ።',
+  'Facebook': 'ፌስቡክ', 'Instagram': 'ኢንስታግራም', 'LinkedIn': 'ሊንክድኢን', 'YouTube': 'ዩቲዩብ', 'TikTok': 'ቲክቶክ',
+  'LIVE PREVIEW': 'ቀጥታ ቅድመ እይታ', 'Your queue is clear. Schedule a post to see it here.': 'የሚጠብቅ ጽሑፍ የለም። እዚህ ለማየት ጽሑፍ ያቅዱ።',
+  'Your scheduled posts and publishing history will appear here.': 'የታቀዱ ጽሑፎችዎና የማጋራት ታሪክዎ እዚህ ይታያሉ።',
+  'Small steps. Better reach.': 'ትንሽ እርምጃ። የበለጠ ተደራሽነት።', 'A little more to go': 'ትንሽ ቀርቷል',
+  'Choose when to publish.': 'መቼ ማጋራት እንደሚፈልጉ ይምረጡ።',
+  'Choose a date and time in Addis Ababa (EAT, UTC+3). ALL-POST will publish it to the selected connected channels.': 'በአዲስ አበባ ሰዓት (EAT, UTC+3) ቀንና ሰዓት ይምረጡ። ALL-POST በተመረጡ የተገናኙ ቻናሎች ያጋራል።',
+  'Post added to your scheduled queue.': 'ጽሑፉ በታቀዱ ዝርዝር ውስጥ ተጨምሯል።', 'Choose a time at least two minutes from now.': 'ከአሁን ቢያንስ ከሁለት ደቂቃ በኋላ ያለ ሰዓት ይምረጡ።',
+  'Optimize photos to save mobile data': 'የሞባይል ዳታ ለመቆጠብ ፎቶዎችን ያመቻቹ',
+  'Review these sharing settings. ALL-POST will upload the selected media to TikTok only after you agree below. TikTok may restrict posts to private visibility until this app passes its Direct Post audit.': 'እነዚህን የማጋራት ቅንብሮች ይመልከቱ። ከታች ከተስማሙ በኋላ ብቻ ALL-POST ሚዲያውን ወደ TikTok ይልካል። የDirect Post ኦዲት እስኪያልፍ ድረስ TikTok ጽሑፎችን ለግል እይታ ብቻ ሊገድብ ይችላል።',
 };
 
 function applyLanguage() {
@@ -375,6 +407,9 @@ function updateSelected() {
   const names = selectedRows().filter((row) => !platformOverrides[row.dataset.channel]?.skip).map((row) => row.querySelector('.channel-info strong').textContent);
   const unconnected = selectedRows().filter((row) => row.dataset.connected !== 'true').map((row) => row.querySelector('.channel-info strong').textContent);
   document.getElementById('publish-label').textContent = unconnected.length ? `Connect ${unconnected.join(' + ')} first` : names.length ? `Post to ${names.join(' + ')}` : connectedRows.length ? 'Choose a channel' : 'Connect a channel first';
+  if (selectedRows().some((row) => row.dataset.channel === 'x') && !twitterText) {
+    loadXTextParser().then(() => { refreshPreview(); renderPlatformOverrides(selectedRows().map((row) => row.dataset.channel)); }).catch(() => {});
+  }
   updateMediaOptions();
 }
 
@@ -437,9 +472,21 @@ function renderPlatformOverrides(channels) {
     const input = document.createElement('textarea');
     input.placeholder = 'Use the main post, or write platform-specific copy';
     input.value = platformOverrides[channel]?.text || '';
-    input.maxLength = channel === 'x' ? 280 : channel === 'youtube' ? 5000 : 10000;
+    input.maxLength = channel === 'youtube' ? 5000 : 10000;
     input.dataset.overrideText = channel;
-    input.addEventListener('input', () => { platformOverrides[channel] = { ...platformOverrides[channel], text: input.value, skip: skip.checked }; saveDraft(); });
+    const counter = document.createElement('small');
+    counter.className = 'override-counter';
+    const limit = { x: 280, linkedin: 3000, instagram: 2200, tiktok: 2200, youtube: 5000 }[channel];
+    const updateCounter = () => {
+      const xStats = channel === 'x' ? xTextStats(input.value) : null;
+      const count = xStats ? xStats.weightedLength : [...input.value].length;
+      const valid = xStats ? xStats.valid : !limit || count <= limit;
+      counter.textContent = channel === 'x' ? `${count}/280 X-weighted` : limit ? `${count}/${limit}` : `${count} characters`;
+      counter.classList.toggle('over-limit', !valid);
+      counter.setAttribute('aria-live', 'polite');
+    };
+    updateCounter();
+    input.addEventListener('input', () => { platformOverrides[channel] = { ...platformOverrides[channel], text: input.value, skip: skip.checked }; updateCounter(); saveDraft(); });
     skip.addEventListener('change', () => { platformOverrides[channel] = { ...platformOverrides[channel], text: input.value, skip: skip.checked }; updateSelected(); saveDraft(); });
     const media = document.createElement('select');
     media.className = 'override-media';
@@ -448,7 +495,7 @@ function renderPlatformOverrides(channels) {
     media.add(new Option('No media', 'none'));
     media.value = platformOverrides[channel]?.mediaMode || 'default';
     media.addEventListener('change', () => { platformOverrides[channel] = { ...platformOverrides[channel], text: input.value, skip: skip.checked, mediaMode: media.value }; saveDraft(); });
-    row.append(name, skipLabel, input, media);
+    row.append(name, skipLabel, input, counter, media);
     root.append(row);
   }
 }
@@ -605,7 +652,9 @@ function saveDraft(showConfirmation = false) {
 function refreshPreview() {
   const value = textarea.value;
   document.getElementById('preview-copy').textContent = value || 'Your next idea deserves to be seen.';
-  document.getElementById('char-count').textContent = value.length;
+  const xSelected = rows.some((row) => row.dataset.channel === 'x' && row.querySelector('input').checked && !platformOverrides.x?.skip);
+  document.getElementById('char-count').textContent = xSelected ? xTextStats(platformOverrides.x?.text?.trim() || value).weightedLength : [...value].length;
+  document.getElementById('char-limit').textContent = xSelected ? ' / 280 X-weighted' : ' / 10,000';
   const [subtitle, name] = platformCopy[activePreview];
   document.getElementById('preview-subtitle').textContent = subtitle;
   document.querySelector('.preview-user strong').textContent = name;
@@ -771,8 +820,13 @@ document.getElementById('publish-button').addEventListener('click', async () => 
     openModal('Choose a video for YouTube.', 'YouTube publishing needs an MP4, MOV, or WebM video.');
     return;
   }
-  if (selected.includes('x') && [...textarea.value].length > 280) {
-    openModal('Shorten the X post.', 'X posts are limited to 280 characters.');
+  const xCopy = platformOverrides.x?.text?.trim() || textarea.value;
+  if (selected.includes('x')) {
+    try { await loadXTextParser(); } catch { /* The API performs the authoritative X validation if the optional counter chunk is unavailable. */ }
+  }
+  const xStats = xTextStats(xCopy);
+  if (selected.includes('x') && !xStats.valid) {
+    openModal('Shorten the X post.', `X uses a weighted 280-character limit. This copy is ${xStats.weightedLength}/280. Links count as 23 characters each.`);
     return;
   }
     const activeSelected = selected;
@@ -809,7 +863,7 @@ document.getElementById('publish-button').addEventListener('click', async () => 
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            text: platformOverrides[channel]?.text?.trim() || textarea.value,
+            text: textarea.value,
             overrides: composePayload().overrides,
             mediaUrl: platformOverrides[channel]?.mediaMode === 'none' ? '' : platformOverrides[channel]?.mediaUrl || selectedMedia?.url,
             mediaType: platformOverrides[channel]?.mediaMode === 'none' ? '' : platformOverrides[channel]?.mediaType || selectedMedia?.contentType,
@@ -932,7 +986,7 @@ document.getElementById('image-input').addEventListener('change', async (event) 
   const file = event.target.files[0];
   if (!file) return;
   if (!['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/quicktime', 'video/webm'].includes(file.type)) return showToast('Choose a JPG, PNG, WebP, MP4, MOV, or WebM file.');
-  if (file.size > 250 * 1024 * 1024) return showToast('Choose media smaller than 250 MB.');
+  if (file.size > 250 * 1024 * 1024) return showToast('Choose media smaller than 250 MB. For mobile data, reduce large videos before uploading.');
   const status = document.getElementById('media-upload-status');
   const message = document.getElementById('media-upload-message');
   status.hidden = false;
@@ -940,19 +994,44 @@ document.getElementById('image-input').addEventListener('change', async (event) 
     message.textContent = 'Public media storage is not connected to Vercel yet.';
     return;
   }
-  message.textContent = `Uploading ${file.name}…`;
+  let uploadFile = file;
+  let optimizedNote = '';
+  if (file.type.startsWith('image/') && document.getElementById('image-optimize').checked) {
+    message.textContent = `Optimizing ${file.name} to use less data…`;
+    try {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, 2048 / Math.max(bitmap.width, bitmap.height));
+      if (scale < 1 || file.size > 900 * 1024 || file.type !== 'image/jpeg') {
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+        canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+        const context = canvas.getContext('2d');
+        context.fillStyle = '#fff';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        const optimizedBlob = await new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Could not optimize this image.')), 'image/jpeg', 0.82));
+        if (optimizedBlob.size < file.size) {
+          const baseName = file.name.replace(/\.[^.]+$/, '') || 'photo';
+          uploadFile = new File([optimizedBlob], `${baseName}.jpg`, { type: 'image/jpeg', lastModified: file.lastModified });
+          optimizedNote = ` · saved ${Math.round((1 - uploadFile.size / file.size) * 100)}% data`;
+        }
+      }
+      bitmap.close();
+    } catch { /* Keep the original file if this browser cannot resize it. */ }
+  }
+  message.textContent = `Uploading ${uploadFile.name}…`;
   try {
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const blob = await upload(`all-post/media/${Date.now()}-${safeName}`, file, {
+    const safeName = uploadFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const blob = await upload(`all-post/media/${Date.now()}-${safeName}`, uploadFile, {
       access: 'public',
       handleUploadUrl: '/api/media/upload',
     });
     const mediaUrl = new URL('/api/media/public', window.location.origin);
     mediaUrl.searchParams.set('url', blob.url);
-    selectedMedia = { url: mediaUrl.toString(), blobUrl: blob.url, contentType: file.type, name: file.name };
-    message.textContent = `${file.name} uploaded. Anyone with its public link can access it until you remove it.`;
+    selectedMedia = { url: mediaUrl.toString(), blobUrl: blob.url, contentType: uploadFile.type, name: uploadFile.name };
+    message.textContent = `${uploadFile.name} uploaded${optimizedNote}. Anyone with its public link can access it until you remove it.`;
     const preview = document.getElementById('preview-image');
-    if (file.type.startsWith('image/')) {
+    if (uploadFile.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = () => {
         preview.style.backgroundImage = `linear-gradient(0deg,rgba(20,35,26,.28),rgba(20,35,26,.05)),url("${reader.result}")`;
