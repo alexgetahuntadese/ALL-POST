@@ -26,11 +26,15 @@ export function createPublishHandler(platform) {
     if (!readiness[platform]()) return response.status(503).json({ error: `${platform} publishing is not configured yet.` });
     const publisher = getPublisher(platform);
     const payload = { ...(request.body || {}), text: String(request.body?.text || '').trim() };
+    payload.overrides = {
+      ...(payload.overrides || {}),
+      [platform]: { ...(payload.overrides?.[platform] || {}), text: payload.text },
+    };
     try {
       publisher.validatePost(payload);
       if (platform === 'youtube' && (!payload.youtubeTitle || !['private', 'unlisted', 'public'].includes(payload.youtubePrivacy))) throw new Error('Add a YouTube title and choose visibility.');
       if (platform === 'tiktok' && (!payload.tiktokPrivacy || payload.tiktokConsent !== true)) throw new Error('Choose TikTok privacy and confirm the media upload.');
-      const result = await publisher.publish({ id: crypto.randomUUID(), payload: { ...payload, overrides: { [platform]: { text: payload.text } } }, scheduledAt: null });
+      const result = await publisher.publish({ id: crypto.randomUUID(), payload, scheduledAt: null });
       try { await recordImmediatePublication(platform, payload, result); }
       catch (error) { console.error(`${platform} post history could not be recorded:`, error.message); }
       const postId = typeof result === 'string' ? result : result?.id || result?.postId || null;

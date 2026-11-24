@@ -810,6 +810,7 @@ document.getElementById('publish-button').addEventListener('click', async () => 
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             text: platformOverrides[channel]?.text?.trim() || textarea.value,
+            overrides: composePayload().overrides,
             mediaUrl: platformOverrides[channel]?.mediaMode === 'none' ? '' : platformOverrides[channel]?.mediaUrl || selectedMedia?.url,
             mediaType: platformOverrides[channel]?.mediaMode === 'none' ? '' : platformOverrides[channel]?.mediaType || selectedMedia?.contentType,
             telegramDestinationIds: composePayload().telegramDestinationIds,
@@ -842,15 +843,19 @@ document.getElementById('publish-button').addEventListener('click', async () => 
           result.status = status;
           result.processing = status !== 'PUBLISH_COMPLETE';
         }
-        results.push({ channel, success: true, processing: Boolean(result.processing), url: result.url });
+        results.push({ channel, success: true, partial: Boolean(result.partial), warning: result.error || '', processing: Boolean(result.processing), url: result.url });
       } catch (error) {
         results.push({ channel, success: false, error: error.message });
       }
     }
     const posted = results.filter((result) => result.success).map((result) => result.channel);
     const failed = results.filter((result) => !result.success);
-    if (failed.length) {
-      const details = failed.map((result) => `${result.channel}: ${result.error}`).join(' · ');
+    const partial = results.filter((result) => result.partial);
+    if (failed.length || partial.length) {
+      const details = [
+        ...failed.map((result) => `${result.channel}: ${result.error}`),
+        ...partial.map((result) => `${result.channel} reached some destinations, but not all: ${result.warning || 'Check the delivery results.'}`),
+      ].join(' · ');
       openModal(posted.length ? `Posted to ${posted.join(' and ')}.` : 'Could not publish.', details);
     } else {
       const pending = results.filter((result) => result.processing).map((result) => result.channel);

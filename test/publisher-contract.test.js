@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { getPublisher, listPublishers, normalizePlatformError } from '../lib/platform-publisher.js';
 import { splitTelegramText } from '../lib/telegram.js';
 import { createWebhookSignature, verifyWebhookSignature, validateWebhookConfig } from '../lib/webhook-publisher.js';
+import { sortJobsByCreatedAt } from '../lib/post-queue.js';
 
 test('all social destinations implement the shared publisher contract', () => {
   const platforms = listPublishers().map((publisher) => publisher.platform);
@@ -30,6 +31,35 @@ test('product media formats validate for Facebook, Instagram, X, and TikTok', ()
   }
   assert.throws(() => getPublisher('facebook').validatePost({ ...sample, mediaType: 'video/webm' }), /Facebook accepts/);
   assert.throws(() => getPublisher('instagram').validatePost({ text: sample.text }), /Instagram requires/);
+});
+
+test('all platform adapters accept their minimum post payload without network calls', () => {
+  const photo = { text: 'ሰላም', mediaUrl: 'https://media.example/post.jpg', mediaType: 'image/jpeg' };
+  const video = { text: 'ሰላም', mediaUrl: 'https://media.example/post.mp4', mediaType: 'video/mp4' };
+  const payloads = {
+    linkedin: { text: 'ሰላም' },
+    facebook: { text: 'ሰላም' },
+    instagram: photo,
+    x: { text: 'ሰላም' },
+    tiktok: photo,
+    youtube: video,
+    telegram: { text: 'ሰላም' },
+    webhook: { text: 'ሰላም' },
+  };
+  for (const [platform, payload] of Object.entries(payloads)) {
+    assert.doesNotThrow(() => getPublisher(platform).validatePost(payload), `${platform} should accept its minimum valid post`);
+  }
+  assert.throws(() => getPublisher('x').validatePost({ text: 'x'.repeat(281) }), /280 characters/);
+  assert.doesNotThrow(() => getPublisher('linkedin').validatePost({ text: 'Master copy', overrides: { linkedin: { text: 'ልዩ ጽሑፍ' } } }));
+});
+
+test('queue history sorts ISO timestamps newest first', () => {
+  const jobs = [
+    { id: 'old', createdAt: '2026-11-20T08:00:00.000Z' },
+    { id: 'newest', createdAt: '2026-11-23T08:00:00.000Z' },
+    { id: 'middle', createdAt: '2026-11-21T08:00:00.000Z' },
+  ];
+  assert.deepEqual(sortJobsByCreatedAt(jobs).map((job) => job.id), ['newest', 'middle', 'old']);
 });
 
 test('Telegram text splits at the requested limit and preserves all content', () => {
